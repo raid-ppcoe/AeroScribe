@@ -90,7 +90,6 @@
             transition: all 0.3s ease;
         }
 
-        /* Glass Panels */
         .panel {
             background: var(--panel-bg);
             border-radius: 16px;
@@ -102,11 +101,23 @@
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             box-shadow: var(--glass-shadow);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            transition: all 0.3s ease;
         }
 
         .panel:hover {
             box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+        }
+
+        .panel.expanded {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            bottom: 20px;
+            z-index: 1000;
+            background: rgba(13, 17, 23, 0.95);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
         }
 
         .transcripts-panel {
@@ -172,6 +183,7 @@
             line-height: 1.4;
             animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             transition: transform 0.2s, background 0.2s;
+            flex-shrink: 0;
         }
 
         .transcript-item:hover {
@@ -272,16 +284,20 @@
 
         /* Alerts */
         .alert-item {
-            padding: 16px;
+            padding: 20px 20px;
             border-radius: 12px;
-            background: linear-gradient(135deg, rgba(248, 81, 73, 0.15) 0%, rgba(248, 81, 73, 0.05) 100%);
-            border: 1px solid rgba(248, 81, 73, 0.3);
-            color: #ff7b72;
+            background: linear-gradient(135deg, rgba(51, 225, 237, 0.15) 0%, rgba(51, 225, 237, 0.05) 100%);
+            border: 1px solid rgba(51, 225, 237, 0.3);
+            color: var(--accent);
             font-size: 0.95rem;
-            line-height: 1.4;
+            line-height: 1.5;
             animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
             overflow: hidden;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
 
         .alert-item::before {
@@ -291,7 +307,7 @@
             top: 0;
             bottom: 0;
             width: 4px;
-            background: var(--danger);
+            background: var(--accent);
         }
 
         .alert-item.MEDIUM {
@@ -304,6 +320,28 @@
             background: var(--warning);
         }
 
+        .alert-item.HIGH {
+            background: linear-gradient(135deg, rgba(237, 137, 54, 0.15) 0%, rgba(237, 137, 54, 0.05) 100%);
+            border-color: rgba(237, 137, 54, 0.3);
+            color: #ed8936;
+        }
+
+        .alert-item.HIGH::before {
+            background: #ed8936;
+        }
+
+        .alert-item.EMERGENCY {
+            background: linear-gradient(135deg, rgba(248, 81, 73, 0.15) 0%, rgba(248, 81, 73, 0.05) 100%);
+            border-color: rgba(248, 81, 73, 0.3);
+            color: #ff7b72;
+            animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1), pulse-border 2s infinite;
+        }
+
+        .alert-item.EMERGENCY::before {
+            background: var(--danger);
+        }
+
+
         .section-title {
             margin-bottom: 20px;
             padding-bottom: 12px;
@@ -313,6 +351,29 @@
             display: flex;
             align-items: center;
             gap: 10px;
+        }
+
+        .expand-btn {
+            margin-left: auto;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            border-radius: 6px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .expand-btn:hover {
+            color: var(--text-main);
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .map-tabs {
@@ -389,6 +450,93 @@
                 box-shadow: 0 0 0 0 rgba(248, 81, 73, 0);
             }
         }
+
+        @keyframes pulse-border {
+            0% {
+                box-shadow: 0 0 0 0 rgba(248, 81, 73, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(248, 81, 73, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(248, 81, 73, 0);
+            }
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: rgba(22, 27, 34, 0.9);
+            border: 1px solid var(--danger);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 0 40px rgba(248, 81, 73, 0.3);
+            transform: translateY(0);
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn-cancel {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-approve {
+            background: rgba(248, 81, 73, 0.2);
+            border: 1px solid var(--danger);
+            color: #ff7b72;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            transition: all 0.2s;
+            box-shadow: 0 0 15px rgba(248, 81, 73, 0.2);
+        }
+
+        .btn-approve:hover {
+            background: rgba(248, 81, 73, 0.4);
+            box-shadow: 0 0 20px rgba(248, 81, 73, 0.4);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
     </style>
 </head>
 
@@ -429,7 +577,8 @@
 
     <!-- Transcripts Panel -->
     <div class="panel transcripts-panel">
-        <h2 class="section-title">Live Radio Content</h2>
+        <h2 class="section-title">Live Radio Content <button class="expand-btn" onclick="toggleExpand(this)">⤢
+                Expand</button></h2>
         <div class="scrollable" id="transcripts-container">
             <div class="empty-state" id="ts-empty">Waiting for radio transmission...</div>
         </div>
@@ -451,52 +600,101 @@
 
     <!-- State Panel -->
     <div class="panel state-panel">
-        <h2 class="section-title">Live Operational State</h2>
+        <h2 class="section-title">Live Operational State
+            <button class="expand-btn"
+                style="margin-right: 8px; background: rgba(51, 225, 237, 0.15); color: var(--accent); border-color: rgba(51, 225, 237, 0.4);"
+                onclick="suggestRoutes()">🤖 Suggest Routes</button>
+            <button class="expand-btn" onclick="toggleExpand(this)">⤢ Expand</button>
+        </h2>
 
-        <h3>Aircraft Overview</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Callsign</th>
-                    <th>Phase</th>
-                    <th>Sector/Route</th>
-                    <th>Clearance</th>
-                </tr>
-            </thead>
-            <tbody id="aircraft-tbody">
-                <tr>
-                    <td colspan="4" class="empty-state" style="border:none;">No active aircraft detected.</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="scrollable">
+            <h3>Aircraft Overview</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Callsign</th>
+                        <th>Phase</th>
+                        <th>Sector/Route</th>
+                        <th>Clearance</th>
+                    </tr>
+                </thead>
+                <tbody id="aircraft-tbody">
+                    <tr>
+                        <td colspan="4" class="empty-state" style="border:none;">No active aircraft detected.</td>
+                    </tr>
+                </tbody>
+            </table>
 
-        <h3>Ground Vehicles</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Vehicle ID</th>
-                    <th>Current Pos</th>
-                    <th>Request</th>
-                    <th>Clearance</th>
-                </tr>
-            </thead>
-            <tbody id="ground-tbody">
-                <tr>
-                    <td colspan="4" class="empty-state" style="border:none;">No active vehicles detected.</td>
-                </tr>
-            </tbody>
-        </table>
+            <h3>Ground Vehicles</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Vehicle ID</th>
+                        <th>Current Pos</th>
+                        <th>Request</th>
+                        <th>Clearance</th>
+                    </tr>
+                </thead>
+                <tbody id="ground-tbody">
+                    <tr>
+                        <td colspan="4" class="empty-state" style="border:none;">No active vehicles detected.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Planning Modal -->
+    <div id="plan-modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 2000; backdrop-filter: blur(5px); justify-content: center; align-items: center;">
+        <div class="panel"
+            style="width: 60%; max-width: 800px; max-height: 80vh; overflow-y: auto; position: relative;">
+            <button onclick="document.getElementById('plan-modal').style.display='none'"
+                style="position: absolute; right: 20px; top: 20px; background: none; border: none; color: white; cursor: pointer; font-size: 1.2rem;">✖</button>
+            <h2 class="section-title" style="color: var(--accent); border-bottom-color: rgba(51, 225, 237, 0.3);">🤖 AI
+                Routing Suggestion</h2>
+            <div id="plan-content" style="line-height: 1.6; white-space: pre-wrap; font-size: 0.95rem;">
+                <!-- Content goes here -->
+            </div>
+        </div>
     </div>
 
     <!-- Alerts Panel -->
     <div class="panel alerts-panel">
-        <h2 class="section-title">Detection Alerts</h2>
+        <h2 class="section-title">Detection Alerts <button class="expand-btn" onclick="toggleExpand(this)">⤢
+                Expand</button></h2>
         <div class="scrollable" id="alerts-container">
             <div class="empty-state" id="al-empty">No active conflicts detected.</div>
         </div>
     </div>
 
+    <!-- Emergency Modal -->
+    <div id="emergency-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2 style="color: var(--danger); margin-top: 0; display: flex; align-items: center; gap: 10px;">
+                <span style="animation: pulse-border 2s infinite; border-radius: 50%; padding: 4px;">⚠️</span> EMERGENCY
+                ACTION REQUIRED
+            </h2>
+            <p id="em-modal-desc"
+                style="font-size: 1.1rem; line-height: 1.5; margin-bottom: 24px; color: var(--text-main);"></p>
+            <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                <button id="btn-cancel-emergency" class="btn-cancel">Dismiss</button>
+                <button id="btn-approve-emergency" class="btn-approve">Notify Emergency Services</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        function toggleExpand(btn) {
+            const panel = btn.closest('.panel');
+            panel.classList.toggle('expanded');
+            if (panel.classList.contains('expanded')) {
+                btn.innerHTML = '⤓ Collapse';
+            } else {
+                btn.innerHTML = '⤢ Expand';
+            }
+        }
+
         // Use 127.0.0.1:8080 if the HTML file was opened directly in browser without FastAPI
         const localWsUrl = location.protocol === 'file:' ? '127.0.0.1:8080' : location.host;
         const ws = new WebSocket(`ws://${localWsUrl}/ws`);
@@ -556,6 +754,18 @@
             if (transcriptsContainer.children.length > 50) transcriptsContainer.lastChild.remove();
         }
 
+        function getPhaseStyle(phase) {
+            const colors = {
+                'parked': '#8b949e',
+                'taxiing': '#e3b341',
+                'takeoff': '#d2a8ff',
+                'airborne': '#33e1ed',
+                'landing': '#2ea043'
+            };
+            const c = colors[phase.toLowerCase()] || '#c9d1d9';
+            return `color: ${c}; font-weight: 600; background: ${c}20; padding: 4px 8px; border-radius: 6px; border: 1px solid ${c}40; font-size: 0.8rem; letter-spacing: 0.5px;`;
+        }
+
         function handleStateUpdate(payload) {
             if (typeof updateMapEntities === 'function') updateMapEntities(payload);
 
@@ -573,7 +783,7 @@
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><strong>${ac.callsign}</strong></td>
-                    <td>${ac.phase.toUpperCase()}</td>
+                    <td><span style="${getPhaseStyle(ac.phase)}">${ac.phase.toUpperCase()}</span></td>
                     <td>${rwRoute}</td>
                     <td><span class="badge ${clearanceClass}">${ac.emergency_flag ? 'EMERGENCY' : ac.clearance_state.toUpperCase()}</span></td>
                 `;
@@ -599,15 +809,78 @@
             }
         }
 
+        let alertIdCounter = 0;
+        let emergencyQueue = [];
+        let isPopupShowing = false;
+
+        function showEmergencyPopup(payload, alertId) {
+            emergencyQueue.push({ payload, alertId });
+            processEmergencyQueue();
+        }
+
+        function processEmergencyQueue() {
+            if (isPopupShowing || emergencyQueue.length === 0) return;
+
+            isPopupShowing = true;
+            const { payload, alertId } = emergencyQueue.shift();
+
+            const modal = document.getElementById('emergency-modal');
+            const desc = document.getElementById('em-modal-desc');
+
+            desc.innerHTML = `<strong>Aircraft/Entities:</strong> ${payload.entities.join(', ')}<br><br><strong>Description:</strong> ${payload.message}<br><br>Should emergency services be notified?`;
+
+            document.getElementById('btn-approve-emergency').onclick = () => approveEmergencyServices(alertId);
+            document.getElementById('btn-cancel-emergency').onclick = () => closeEmergencyPopup(alertId);
+
+            modal.style.display = 'flex';
+        }
+
+        function closeEmergencyPopup(alertId) {
+            document.getElementById('emergency-modal').style.display = 'none';
+            const statusEl = document.getElementById(`status-${alertId}`);
+            if (statusEl) {
+                statusEl.innerText = "Emergency Response Declined";
+                statusEl.style.color = "var(--text-muted)";
+            }
+            isPopupShowing = false;
+            processEmergencyQueue();
+        }
+
+        function approveEmergencyServices(alertId) {
+            document.getElementById('emergency-modal').style.display = 'none';
+            const statusEl = document.getElementById(`status-${alertId}`);
+            if (statusEl) {
+                statusEl.innerHTML = "✓ Emergency Response Notified";
+                statusEl.style.color = "var(--success)";
+            }
+            isPopupShowing = false;
+            processEmergencyQueue();
+        }
+
         function handleAlert(payload) {
+            let severityClass = payload.severity;
+            if (payload.alert_type === 'EMERGENCY_DECLARED' || (payload.message && payload.message.toLowerCase().includes('emergency'))) {
+                severityClass = 'EMERGENCY';
+            }
+
+            const alertId = 'alert-' + alertIdCounter++;
+
             const el = document.createElement('div');
-            el.className = `alert-item ${payload.severity}`;
+            el.id = alertId;
+            el.className = `alert-item ${severityClass}`;
             const timeStr = new Date(payload.timestamp * 1000).toLocaleTimeString();
 
+            let statusHTML = '';
+            if (severityClass === 'EMERGENCY') {
+                statusHTML = `<div id="status-${alertId}" style="margin-top: 8px; font-weight: bold; color: var(--warning); font-size: 0.85rem;">Pending Emergency Response...</div>`;
+                showEmergencyPopup(payload, alertId);
+            }
+
             el.innerHTML = `
-                <strong style="display:block;margin-bottom:4px;">${payload.severity === 'HIGH' ? '⚠️' : '⚡'} ${payload.alert_type.replace(/_/g, ' ')}</strong>
+                <strong style="display:block;margin-bottom:4px;">${severityClass === 'HIGH' || severityClass === 'EMERGENCY' ? '⚠️' : '⚡'} ${payload.alert_type.replace(/_/g, ' ')}</strong>
                 <div style="font-size:0.8rem;opacity:0.8;margin-bottom:8px;font-family:'Outfit',sans-serif;">${timeStr} • Entities: ${payload.entities.join(', ')}</div>
                 <div>${payload.message}</div>
+                ${statusHTML}
             `;
             alertsContainer.prepend(el);
             if (alertsContainer.children.length > 15) alertsContainer.lastChild.remove();
@@ -686,6 +959,15 @@
             return { x: 500, y: 950, locStr: 'unknown' };
         }
 
+        function stringToColor(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = str.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const hue = Math.abs(hash) % 360;
+            return `hsl(${hue}, 80 %, 65 %)`;
+        }
+
         function updateMapEntities(payload) {
             const currentIds = new Set();
             for (const [id, ac] of Object.entries(payload.aircraft)) {
@@ -749,6 +1031,8 @@
                 ctx.fillText(r.label, r.x, r.y2 + 25); ctx.textAlign = 'left';
             });
 
+            const labelsToDraw = [];
+
             for (const key in mapEntities) {
                 let e = mapEntities[key];
                 e.x += (e.targetX - e.x) * 0.03; e.y += (e.targetY - e.y) * 0.03;
@@ -764,7 +1048,7 @@
 
                 if (!visible) continue;
 
-                const pinColor = e.emergency ? '#f85149' : (e.type === 'aircraft' ? '#33e1ed' : '#e3b341');
+                const pinColor = e.emergency ? '#f85149' : (e.type === 'aircraft' ? stringToColor(e.callsign) : '#e3b341');
                 if (e.emergency) {
                     ctx.beginPath(); ctx.arc(e.x, e.y, 15 + Math.sin(Date.now() / 150) * 5, 0, Math.PI * 2);
                     ctx.fillStyle = 'rgba(248, 81, 73, 0.3)'; ctx.fill();
@@ -772,7 +1056,33 @@
                 ctx.beginPath(); ctx.arc(e.x, e.y, e.type === 'aircraft' ? 8 : 6, 0, Math.PI * 2);
                 ctx.fillStyle = pinColor; ctx.fill();
                 ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Inter'; ctx.fillText(e.callsign, e.x + 12, e.y + 4);
+
+                labelsToDraw.push({ text: e.callsign, x: e.x + 12, y: e.y + 4 });
+            }
+
+            // Simple vertical collision avoidance for labels
+            labelsToDraw.sort((a, b) => a.y - b.y);
+            for (let i = 0; i < labelsToDraw.length; i++) {
+                for (let j = 0; j < i; j++) {
+                    const prev = labelsToDraw[j];
+                    const curr = labelsToDraw[i];
+                    // If labels are too close horizontally and vertically
+                    if (Math.abs(curr.x - prev.x) < 50 && curr.y - prev.y < 16) {
+                        curr.y = prev.y + 16;
+                    }
+                }
+            }
+
+            // Draw labels
+            for (const lbl of labelsToDraw) {
+                ctx.font = 'bold 12px Inter';
+                // Draw a subtle background for better readability against the map
+                const textWidth = ctx.measureText(lbl.text).width;
+                ctx.fillStyle = 'rgba(11, 15, 25, 0.7)';
+                ctx.fillRect(lbl.x - 2, lbl.y - 10, textWidth + 4, 14);
+
+                ctx.fillStyle = '#fff';
+                ctx.fillText(lbl.text, lbl.x, lbl.y);
             }
             ctx.restore();
             requestAnimationFrame(drawMap);
@@ -800,9 +1110,27 @@
                 severity: "INFO",
                 alert_type: "Manual Entry",
                 entities: [callsign],
-                message: `Manually added ${type} target: ${callsign}`,
+                message: `Manually added ${type} target: ${callsign} `,
                 timestamp: Date.now() / 1000
             });
+        }
+
+        async function suggestRoutes() {
+            const modal = document.getElementById('plan-modal');
+            const content = document.getElementById('plan-content');
+            modal.style.display = 'flex';
+            content.innerHTML = '<div style="text-align:center; padding: 40px; color: var(--accent); opacity: 0.8; animation: pulse 1.5s infinite;">Generating conflict-free routing plan...</div>';
+
+            try {
+                const response = await fetch('/api/plan');
+                const data = await response.json();
+
+                // Format text with markdown-ish lists back to HTML
+                let text = data.suggestion.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                content.innerHTML = `<div style="padding: 10px 0;">${text}</div>`;
+            } catch (err) {
+                content.innerHTML = `<div style="color: var(--danger); padding: 20px;">Failed to generate plan: ${err.message}</div>`;
+            }
         }
     </script>
 </body>
