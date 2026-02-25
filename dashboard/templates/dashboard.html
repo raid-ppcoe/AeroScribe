@@ -497,8 +497,8 @@
     </div>
 
     <script>
-        // Use 127.0.0.1:8000 if the HTML file was opened directly in browser without FastAPI
-        const localWsUrl = location.protocol === 'file:' ? '127.0.0.1:8000' : location.host;
+        // Use 127.0.0.1:8080 if the HTML file was opened directly in browser without FastAPI
+        const localWsUrl = location.protocol === 'file:' ? '127.0.0.1:8080' : location.host;
         const ws = new WebSocket(`ws://${localWsUrl}/ws`);
         const transcriptsContainer = document.getElementById('transcripts-container');
         const alertsContainer = document.getElementById('alerts-container');
