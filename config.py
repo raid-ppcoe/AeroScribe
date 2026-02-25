@@ -17,16 +17,16 @@ WHISPER_MODEL_SIZE = "tiny.en"  # "tiny.en", "base.en", "small.en" - depending o
 VAD_FILTER = True # Voice activity detection to ignore silence
 CPU_THREADS = 4
 
-# Airport Configuration (Mock layout)
+# Airport Configuration (WSSS Changi mock layout)
 AIRPORT_LAYOUT = {
     "runways": [
-        "09L", "09R", "27L", "27R", "02", "20"
+        "02L", "20R", "02C", "20C", "02R", "20L"
     ],
     "taxiways": [
-        "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot"
+        "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Victor"
     ],
     "platforms": [
-        "Platform 1", "Platform 2", "Platform 3", "Cargo"
+        "Platform 1", "Platform 2", "Cargo", "Stand F42", "Terminal 1", "Terminal 2", "Terminal 3"
     ]
 }
 
@@ -37,3 +37,5 @@ CONFLICT_SEVERITY_MEDIUM = "MEDIUM"
 # Server configuration
 HOST = "0.0.0.0"
 PORT = 8000
+
+

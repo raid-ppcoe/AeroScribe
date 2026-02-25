@@ -13,44 +13,43 @@ class RadioSimulator:
         self._thread = None
         
         self.script = [
-            # --- ROUTINE DEPARTURE (Pushback & Taxi) ---
+            # --- MORNING DEPARTURE RUSH ---
             "Changi Ground, Singapore 318, aircraft type Boeing 777, stand F42, request pushback and start.",
             "Singapore 318, Changi Ground, pushback and start approved.",
             "Singapore 318, request taxi.",
             "Singapore 318, taxi to holding point Runway 02L via Alpha and Echo.",
             
-            # --- ROUTINE ARRIVAL ---
-            "Changi Tower, Scoot 421 is inbound for landing Runway 02L.",
-            "Scoot 421, Changi Tower, wind 040 degrees 10 knots, Runway 02L, cleared to land.",
-            
-            # --- ROUTINE GROUND MOVEMENT ---
+            # --- ROUTINE GROUND MAINTENANCE ---
             "Ground, Sweeper 1 requesting to proceed via Charlie to Cargo.",
             "Sweeper 1, proceed via Charlie to Cargo, approved.",
             
-            # --- ARRIVAL TAXI ---
-            "Scoot 421, welcome to Changi, taxi to Platform 1 via Delta.",
-            
-            # --- RUNWAY INCURSION CONFLICT ---
+            # --- TAKEOFF CLEARANCE ---
             "Singapore 318, wind 050 degrees 12 knots, Runway 02L, cleared for takeoff.",
-            "Ground, Sweeper 1 taxiing to Runway 02L for wildlife clearing.", 
-            "Sweeper 1, negative! Hold position short of Runway 02L, traffic departing!",
-            "Singapore 318, cancel takeoff clearance, I say again cancel takeoff clearance, hold position, vehicle on runway.",
-            
-            # --- RESOLVING INCURSION ---
-            "Sweeper 1 holding short.",
-            "Singapore 318, Runway 02L is clear, cleared for takeoff.",
+            "Singapore 318, cleared for takeoff Runway 02L.",
             "Singapore 318, airborne.",
             
-            # --- IN-FLIGHT EMERGENCY (PAN-PAN) ---
-            "Changi Tower, Qantas 22, pan pan, pan pan, pan pan, medical passenger on board, requesting priority landing Runway 20R.",
-            "Qantas 22, roger, priority landing approved for Runway 20R.",
+            # --- MIDDAY ARRIVAL ---
+            "Changi Tower, Scoot 421 is inbound for landing Runway 02C.",
+            "Scoot 421, Changi Tower, wind 040 degrees 10 knots, Runway 02C, cleared to land.",
             
-            # --- HOLDING PATTERN DUE TO EMERGENCY ---
-            "Cathay 711, hold short of Runway 20R, emergency traffic on approach.",
+            # --- ARRIVAL TAXI ---
+            "Scoot 421, welcome to Changi, runway vacated.",
+            "Scoot 421, taxi to Platform 1 via Delta and Bravo.",
             
-            # --- SEVERE GROUND EMERGENCY (MAYDAY) ---
-            "Ground, Titan 9, mayday mayday mayday, engine fire, declaring emergency on Echo taxiway.",
-            "Titan 9, emergency declared, dispatching fire rescue to Echo.",
+            # --- AFTERNOON DEPARTURE ---
+            "Changi Ground, Cathay 711, aircraft type Airbus A350, Terminal 2, request pushback.",
+            "Cathay 711, Changi Ground, pushback approved.",
+            "Cathay 711, request taxi.",
+            "Cathay 711, taxi to holding point Runway 02R via Victor.",
+            
+            # --- CLEARANCE & DEPARTURE ---
+            "Cathay 711, wind 060 degrees 8 knots, Runway 02R, cleared for takeoff.",
+            "Cathay 711, cleared for takeoff Runway 02R.",
+            "Cathay 711, airborne, switching to departure control.",
+            
+            # --- END OF ROTATION ---
+            "Ground, Sweeper 1 secured at Cargo.",
+            "Sweeper 1, roger, have a good day."
         ]
         
     def start(self):

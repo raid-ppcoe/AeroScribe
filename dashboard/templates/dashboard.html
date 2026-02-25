@@ -30,9 +30,9 @@
             margin: 0;
             padding: 20px;
             display: grid;
-            grid-template-columns: 350px 1fr 380px;
-            grid-template-rows: auto 1fr;
-            gap: 24px;
+            grid-template-columns: 350px 1fr 350px;
+            grid-template-rows: auto 1fr 1fr;
+            gap: 20px;
             height: 100vh;
             box-sizing: border-box;
             overflow: hidden;
@@ -111,14 +111,29 @@
 
         .transcripts-panel {
             grid-column: 1 / 2;
+            grid-row: 3 / 4;
+        }
+
+        .input-panel {
+            grid-column: 1 / 2;
+            grid-row: 2 / 3;
+        }
+
+        .map-panel {
+            grid-column: 2 / 3;
+            grid-row: 2 / 4;
+            padding: 0;
+            position: relative;
         }
 
         .state-panel {
-            grid-column: 2 / 3;
+            grid-column: 3 / 4;
+            grid-row: 2 / 3;
         }
 
         .alerts-panel {
             grid-column: 3 / 4;
+            grid-row: 3 / 4;
         }
 
         .scrollable {
@@ -300,6 +315,36 @@
             gap: 10px;
         }
 
+        .map-tabs {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .map-tab {
+            background: rgba(13, 17, 23, 0.8);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+
+        .map-tab:hover {
+            color: var(--text-main);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .map-tab.active {
+            background: rgba(51, 225, 237, 0.15);
+            color: var(--accent);
+            border-color: rgba(51, 225, 237, 0.4);
+        }
+
         .empty-state {
             color: var(--text-muted);
             font-style: italic;
@@ -357,12 +402,51 @@
         </div>
     </div>
 
+    <!-- Input Panel -->
+    <div class="panel input-panel">
+        <h2 class="section-title">Add Target Entity</h2>
+        <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.9rem;">
+            <div>
+                <label style="display: block; margin-bottom: 4px; color: var(--text-muted);">Callsign / ID</label>
+                <input type="text" id="mock-callsign" placeholder="e.g. SIA 318"
+                    style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); color: white; box-sizing: border-box; font-family: 'Inter', sans-serif;">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label style="display: block; margin-bottom: 4px; color: var(--text-muted);">Type</label>
+                    <select id="mock-type"
+                        style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); color: white; font-family: 'Inter', sans-serif;">
+                        <option value="aircraft">Aircraft</option>
+                        <option value="vehicle">Ground Vehicle</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="addMockEntity()"
+                style="margin-top: 8px; padding: 10px; background: rgba(51, 225, 237, 0.15); color: var(--accent); border: 1px solid rgba(51, 225, 237, 0.4); border-radius: 6px; cursor: pointer; font-weight: 600; font-family: 'Inter', sans-serif; transition: all 0.2s;">Create
+                Entity</button>
+        </div>
+    </div>
+
     <!-- Transcripts Panel -->
     <div class="panel transcripts-panel">
         <h2 class="section-title">Live Radio Content</h2>
         <div class="scrollable" id="transcripts-container">
             <div class="empty-state" id="ts-empty">Waiting for radio transmission...</div>
         </div>
+    </div>
+
+    <!-- Main Map Panel -->
+    <div class="panel map-panel">
+        <div
+            style="position: absolute; top: 15px; left: 20px; z-index: 10; display: flex; flex-direction: column; gap: 4px;">
+            <h2 class="section-title" style="border:none; margin:0; padding:0; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                Aerodrome 2D Map (WSSS)</h2>
+            <div class="map-tabs">
+                <button class="map-tab active" id="tab-tower" onclick="setMapTab('tower')">Tower Controller</button>
+                <button class="map-tab" id="tab-ground" onclick="setMapTab('ground')">Ground Controller</button>
+            </div>
+        </div>
+        <canvas id="aerodrome-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
     </div>
 
     <!-- State Panel -->
@@ -473,6 +557,8 @@
         }
 
         function handleStateUpdate(payload) {
+            if (typeof updateMapEntities === 'function') updateMapEntities(payload);
+
             // Update Aircraft
             const acKeys = Object.keys(payload.aircraft);
             if (acKeys.length > 0) acBody.innerHTML = '';
@@ -525,6 +611,198 @@
             `;
             alertsContainer.prepend(el);
             if (alertsContainer.children.length > 15) alertsContainer.lastChild.remove();
+        }
+
+        // --- MAP LOGIC ---
+        const canvas = document.getElementById('aerodrome-canvas');
+        const ctx = canvas.getContext('2d');
+        let mapEntities = {};
+        let currentMapTab = 'tower';
+
+        function setMapTab(tab) {
+            currentMapTab = tab;
+            document.getElementById('tab-tower').classList.toggle('active', tab === 'tower');
+            document.getElementById('tab-ground').classList.toggle('active', tab === 'ground');
+        }
+
+        const MAP_SIZE = 1000;
+        const layout = {
+            runways: [
+                { id: "02L/20R", x: 300, y1: 150, y2: 850, label: "02L" },
+                { id: "02C/20C", x: 500, y1: 150, y2: 850, label: "02C" },
+                { id: "02R/20L", x: 700, y1: 150, y2: 850, label: "02R" }
+            ],
+            taxiways: [
+                { id: "Alpha", type: "v", x: 230, y1: 150, y2: 850 },
+                { id: "Bravo", type: "v", x: 370, y1: 150, y2: 850 },
+                { id: "Charlie", type: "h", y: 700, x1: 200, x2: 750 },
+                { id: "Delta", type: "h", y: 400, x1: 100, x2: 750 },
+                { id: "Echo", type: "h", y: 250, x1: 200, x2: 750 }
+            ],
+            areas: [
+                { id: "Stand F42", x: 100, y: 200, w: 80, h: 80 },
+                { id: "Platform 1", x: 100, y: 450, w: 100, h: 100 },
+                { id: "Cargo", x: 750, y: 650, w: 150, h: 150 }
+            ],
+            nodes: {
+                "02L": { x: 300, y: 800 }, "20R": { x: 300, y: 200 },
+                "02C": { x: 500, y: 800 }, "20C": { x: 500, y: 200 },
+                "02R": { x: 700, y: 800 }, "20L": { x: 700, y: 200 },
+                "Alpha": { x: 230, y: 500 },
+                "Bravo": { x: 370, y: 500 },
+                "Charlie": { x: 500, y: 700 },
+                "Delta": { x: 230, y: 400 },
+                "Echo": { x: 300, y: 250 },
+                "Stand F42": { x: 140, y: 240 },
+                "Platform 1": { x: 150, y: 500 },
+                "Cargo": { x: 800, y: 700 },
+                "airborne": { x: 500, y: 50 }
+            }
+        };
+
+        function resizeCanvas() {
+            if (!canvas || !canvas.parentElement) return;
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        setTimeout(resizeCanvas, 100);
+
+        function getEntityTarget(state, type) {
+            let locStr = null;
+            if (type === 'aircraft') {
+                if (state.phase.toLowerCase() === 'airborne') locStr = 'airborne';
+                else if (state.route && state.route.length > 0) locStr = state.route[state.route.length - 1];
+                else if (state.runway) locStr = state.runway;
+            } else {
+                if (state.position) locStr = state.position;
+                else if (state.runway_entry_request) locStr = state.runway_entry_request;
+            }
+            if (locStr) {
+                for (let key in layout.nodes) {
+                    if (locStr.toLowerCase().includes(key.toLowerCase())) return { ...layout.nodes[key], locStr: key };
+                }
+            }
+            return { x: 500, y: 950, locStr: 'unknown' };
+        }
+
+        function updateMapEntities(payload) {
+            const currentIds = new Set();
+            for (const [id, ac] of Object.entries(payload.aircraft)) {
+                currentIds.add(id);
+                const target = getEntityTarget(ac, 'aircraft');
+                if (!mapEntities[id]) mapEntities[id] = { x: target.x, y: Math.max(0, target.y - 100), type: 'aircraft', callsign: ac.callsign };
+                mapEntities[id].targetX = target.x;
+                mapEntities[id].targetY = target.y;
+                mapEntities[id].emergency = ac.emergency_flag;
+                mapEntities[id].locStr = target.locStr;
+            }
+            for (const [id, gnd] of Object.entries(payload.ground)) {
+                currentIds.add(id);
+                const target = getEntityTarget(gnd, 'ground');
+                if (!mapEntities[id]) mapEntities[id] = { x: target.x, y: Math.max(0, target.y - 100), type: 'vehicle', callsign: gnd.vehicle_id };
+                mapEntities[id].targetX = target.x;
+                mapEntities[id].targetY = target.y;
+                mapEntities[id].emergency = gnd.emergency_flag;
+                mapEntities[id].locStr = target.locStr;
+            }
+            for (const id in mapEntities) {
+                if (!currentIds.has(id) && !mapEntities[id].isMock) delete mapEntities[id];
+            }
+        }
+
+        function drawMap() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const scale = Math.min(canvas.width / MAP_SIZE, canvas.height / MAP_SIZE) * 0.90;
+            const offsetX = (canvas.width - MAP_SIZE * scale) / 2;
+            const offsetY = (canvas.height - MAP_SIZE * scale) / 2 + 20;
+
+            ctx.save();
+            ctx.translate(offsetX, offsetY);
+            ctx.scale(scale, scale);
+
+            ctx.fillStyle = '#1c212b'; ctx.strokeStyle = '#30363d'; ctx.lineWidth = 2;
+            layout.areas.forEach(p => {
+                ctx.fillRect(p.x, p.y, p.w, p.h); ctx.strokeRect(p.x, p.y, p.w, p.h);
+                ctx.fillStyle = '#8b949e'; ctx.font = '14px Outfit'; ctx.fillText(p.id, p.x + 10, p.y + 20);
+                ctx.fillStyle = '#1c212b';
+            });
+
+            ctx.strokeStyle = '#27313f';
+            layout.taxiways.forEach(t => {
+                ctx.lineWidth = 12; ctx.beginPath();
+                if (t.type === 'v') { ctx.moveTo(t.x, t.y1); ctx.lineTo(t.x, t.y2); }
+                else { ctx.moveTo(t.x1, t.y); ctx.lineTo(t.x2, t.y); }
+                ctx.stroke();
+                ctx.fillStyle = '#8b949e'; ctx.font = '16px Outfit';
+                if (t.type === 'v') ctx.fillText(t.id, t.x + 10, (t.y1 + t.y2) / 2);
+                else ctx.fillText(t.id, (t.x1 + t.x2) / 2, t.y - 10);
+            });
+
+            layout.runways.forEach(r => {
+                ctx.strokeStyle = '#3b4351'; ctx.lineWidth = 24; ctx.beginPath();
+                ctx.moveTo(r.x, r.y1); ctx.lineTo(r.x, r.y2); ctx.stroke();
+                ctx.strokeStyle = '#c9d1d9'; ctx.lineWidth = 2; ctx.setLineDash([15, 10]);
+                ctx.beginPath(); ctx.moveTo(r.x, r.y1); ctx.lineTo(r.x, r.y2); ctx.stroke(); ctx.setLineDash([]);
+                ctx.fillStyle = '#c9d1d9'; ctx.font = 'bold 20px Outfit'; ctx.textAlign = 'center';
+                ctx.fillText(r.label, r.x, r.y2 + 25); ctx.textAlign = 'left';
+            });
+
+            for (const key in mapEntities) {
+                let e = mapEntities[key];
+                e.x += (e.targetX - e.x) * 0.03; e.y += (e.targetY - e.y) * 0.03;
+
+                // View filtering logic
+                let visible = true;
+                if (currentMapTab === 'ground' && e.type === 'aircraft') {
+                    const loc = (e.locStr || '').toLowerCase();
+                    const isAirborne = loc === 'airborne';
+                    const isRunway = loc.includes('02') || loc.includes('20');
+                    if (isAirborne || isRunway) visible = false;
+                }
+
+                if (!visible) continue;
+
+                const pinColor = e.emergency ? '#f85149' : (e.type === 'aircraft' ? '#33e1ed' : '#e3b341');
+                if (e.emergency) {
+                    ctx.beginPath(); ctx.arc(e.x, e.y, 15 + Math.sin(Date.now() / 150) * 5, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(248, 81, 73, 0.3)'; ctx.fill();
+                }
+                ctx.beginPath(); ctx.arc(e.x, e.y, e.type === 'aircraft' ? 8 : 6, 0, Math.PI * 2);
+                ctx.fillStyle = pinColor; ctx.fill();
+                ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 12px Inter'; ctx.fillText(e.callsign, e.x + 12, e.y + 4);
+            }
+            ctx.restore();
+            requestAnimationFrame(drawMap);
+        }
+        requestAnimationFrame(drawMap);
+        function addMockEntity() {
+            const callsign = document.getElementById('mock-callsign').value.trim();
+            const type = document.getElementById('mock-type').value;
+            if (!callsign) return;
+
+            const id = callsign.toLowerCase().replace(/\s+/g, '_');
+            if (type === 'aircraft') {
+                if (!mapEntities[id]) {
+                    mapEntities[id] = { x: 500, y: 950, type: 'aircraft', callsign: callsign, targetX: 500, targetY: 950, emergency: false, locStr: 'unknown', isMock: true };
+                }
+            } else {
+                if (!mapEntities[id]) {
+                    mapEntities[id] = { x: 500, y: 950, type: 'vehicle', callsign: callsign, targetX: 500, targetY: 950, emergency: false, locStr: 'unknown', isMock: true };
+                }
+            }
+            document.getElementById('mock-callsign').value = '';
+
+            // Add a mock alert to notify
+            handleAlert({
+                severity: "INFO",
+                alert_type: "Manual Entry",
+                entities: [callsign],
+                message: `Manually added ${type} target: ${callsign}`,
+                timestamp: Date.now() / 1000
+            });
         }
     </script>
 </body>

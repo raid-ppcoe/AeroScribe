@@ -9,3 +9,7 @@ sounddevice
 
 # Testing
 pytest
+
+# LLM
+google-genai
+pydantic
