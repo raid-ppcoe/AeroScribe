@@ -3,6 +3,7 @@ import argparse
 import logging
 import uvicorn
 import asyncio
+from fastapi import FastAPI
 from contextlib import asynccontextmanager
 import threading
 
@@ -73,11 +74,12 @@ async def lifespan(app: FastAPI):
     logger.info("Initializing ATC AI Assist Core...")
     import dashboard.server
     dashboard.server._main_loop = asyncio.get_running_loop()
-    if app.state.simulate:
+    if app.state.simulate or app.state.simulate_emergency:
         from simulation.radio_simulator import RadioSimulator
-        app.state.simulator = RadioSimulator(process_text_transcript, delay_between_calls=1.5)
+        sim_mode = "emergency" if app.state.simulate_emergency else "normal"
+        app.state.simulator = RadioSimulator(process_text_transcript, mode=sim_mode, delay_between_calls=1.5)
         app.state.simulator.start()
-        logger.info("Running in SIMULATION mode.")
+        logger.info(f"Running in SIMULATION mode ({sim_mode}).")
     else:
         # Load heavy ML models
         from audio.stt_engine import STTEngine
@@ -103,7 +105,7 @@ async def lifespan(app: FastAPI):
     
     # Shutdown Phase
     logger.info("Shutting down ATC AI Assist Core...")
-    if app.state.simulate:
+    if app.state.simulate or app.state.simulate_emergency:
         app.state.simulator.stop()
     elif hasattr(app.state, 'listener') and app.state.listener:
         app.state.listener.stop()
@@ -112,15 +114,21 @@ app.router.lifespan_context = lifespan
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(description="ATC AI Assist System")
-    arg_parser.add_argument("--simulate", action="store_true", help="Run with scripted simulator instead of audio.")
+    arg_parser.add_argument("--simulate", action="store_true", help="Run with normal scripted simulator instead of audio.")
+    arg_parser.add_argument("--simulate-emergency", action="store_true", help="Run with emergency scripted simulator (includes fire/medical/tow response).")
     arg_parser.add_argument("--demo-wav", type=str, help="Run offline using a specified .wav file.")
     args = arg_parser.parse_args()
     
     app.state.simulate = args.simulate
+    app.state.simulate_emergency = args.simulate_emergency
     app.state.demo_wav = args.demo_wav
     
-    if args.demo_wav and args.simulate:
-         logger.error("Cannot use --simulate and --demo-wav at the same time.")
+    if args.demo_wav and (args.simulate or args.simulate_emergency):
+         logger.error("Cannot use simulation arguments and --demo-wav at the same time.")
+         sys.exit(1)
+         
+    if args.simulate and args.simulate_emergency:
+         logger.error("Cannot use both --simulate and --simulate-emergency at the same time.")
          sys.exit(1)
          
     logger.info(f"Starting API Server on http://{config.HOST}:{config.PORT}")
