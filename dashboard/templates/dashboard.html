@@ -901,34 +901,42 @@
         const MAP_SIZE = 1000;
         const layout = {
             runways: [
-                { id: "02L/20R", x: 300, y1: 150, y2: 850, label: "02L" },
+                { id: "02L/20R", x: 200, y1: 150, y2: 850, label: "02L" },
                 { id: "02C/20C", x: 500, y1: 150, y2: 850, label: "02C" },
-                { id: "02R/20L", x: 700, y1: 150, y2: 850, label: "02R" }
+                { id: "02R/20L", x: 800, y1: 150, y2: 850, label: "02R" }
             ],
             taxiways: [
-                { id: "Alpha", type: "v", x: 230, y1: 150, y2: 850 },
-                { id: "Bravo", type: "v", x: 370, y1: 150, y2: 850 },
-                { id: "Charlie", type: "h", y: 700, x1: 200, x2: 750 },
-                { id: "Delta", type: "h", y: 400, x1: 100, x2: 750 },
-                { id: "Echo", type: "h", y: 250, x1: 200, x2: 750 }
+                { id: "Alpha", type: "v", x: 150, y1: 150, y2: 850 },
+                { id: "Bravo", type: "v", x: 250, y1: 150, y2: 850 },
+                { id: "Victor", type: "v", x: 450, y1: 150, y2: 850 },
+                { id: "Whiskey", type: "v", x: 550, y1: 150, y2: 850 },
+                { id: "North Cross", type: "h", y: 250, x1: 100, x2: 900 },
+                { id: "South Cross", type: "h", y: 750, x1: 100, x2: 900 }
             ],
             areas: [
-                { id: "Stand F42", x: 100, y: 200, w: 80, h: 80 },
-                { id: "Platform 1", x: 100, y: 450, w: 100, h: 100 },
-                { id: "Cargo", x: 750, y: 650, w: 150, h: 150 }
+                { id: "Terminal 1", x: 280, y: 300, w: 140, h: 80 },
+                { id: "Terminal 2", x: 280, y: 400, w: 140, h: 80 },
+                { id: "Terminal 3", x: 280, y: 500, w: 140, h: 80 },
+                { id: "Terminal 4", x: 350, y: 880, w: 150, h: 80 },
+                { id: "Cargo", x: 850, y: 450, w: 120, h: 200 },
+                { id: "Changi East", x: 850, y: 700, w: 120, h: 150 }
             ],
             nodes: {
-                "02L": { x: 300, y: 800 }, "20R": { x: 300, y: 200 },
+                "02L": { x: 200, y: 800 }, "20R": { x: 200, y: 200 },
                 "02C": { x: 500, y: 800 }, "20C": { x: 500, y: 200 },
-                "02R": { x: 700, y: 800 }, "20L": { x: 700, y: 200 },
-                "Alpha": { x: 230, y: 500 },
-                "Bravo": { x: 370, y: 500 },
-                "Charlie": { x: 500, y: 700 },
-                "Delta": { x: 230, y: 400 },
-                "Echo": { x: 300, y: 250 },
-                "Stand F42": { x: 140, y: 240 },
-                "Platform 1": { x: 150, y: 500 },
-                "Cargo": { x: 800, y: 700 },
+                "02R": { x: 800, y: 800 }, "20L": { x: 800, y: 200 },
+                "Alpha": { x: 150, y: 500 },
+                "Bravo": { x: 250, y: 500 },
+                "Victor": { x: 450, y: 500 },
+                "Whiskey": { x: 550, y: 500 },
+                "North Cross": { x: 500, y: 250 },
+                "South Cross": { x: 500, y: 750 },
+                "Terminal 1": { x: 350, y: 340 },
+                "Terminal 2": { x: 350, y: 440 },
+                "Terminal 3": { x: 350, y: 540 },
+                "Terminal 4": { x: 425, y: 860 },
+                "Cargo": { x: 830, y: 550 },
+                "Changi East": { x: 830, y: 750 },
                 "airborne": { x: 500, y: 50 }
             }
         };

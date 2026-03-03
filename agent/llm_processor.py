@@ -72,7 +72,10 @@ Task:
 1. Parse the transcript to identify entity (aircraft/vehicle), intent, route, runway, etc.
 2. Compare with `current_state` to find conflicts or emergencies.
 3. Determine clearance (granted or pending).
-4. Output strict JSON matching this schema:
+4. **STT Resilience**: The transcript comes from an STT model and may contain phonetic spelling errors. 
+   - Ensure you infer the closest aviation terminology based on context. 
+   - For example, if you see words like 'maybe', 'may day', or 'made a' in the context of danger (fire, failure, rejecting takeoff), treat it as a `MAYDAY` emergency and set the `emergency_flag`.
+5. Output strict JSON matching this schema:
 {{
   "parsed_event": {{
     "entity_id": "string",

@@ -22,7 +22,14 @@ class STTEngine:
             return ""
             
         try:
-            segments, info = self.model.transcribe(audio_data, beam_size=5, vad_filter=config.VAD_FILTER)
+            # Provide ATC context to bias the STT engine away from general conversational words
+            prompt = "ATC communications. MAYDAY, PAN-PAN, runway, taxiway, clearance, Changi, tower, ground, hold short."
+            segments, info = self.model.transcribe(
+                audio_data, 
+                beam_size=5, 
+                vad_filter=config.VAD_FILTER,
+                initial_prompt=prompt
+            )
             text = " ".join([segment.text for segment in segments])
             return text.strip()
         except Exception as e:

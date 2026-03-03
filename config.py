@@ -13,7 +13,7 @@ EVENTS_LOG_PATH = LOGS_DIR / "events.jsonl"
 ALERTS_LOG_PATH = LOGS_DIR / "alerts.jsonl"
 
 # Audio Settings
-WHISPER_MODEL_SIZE = "tiny.en"  # "tiny.en", "base.en", "small.en" - depending on CPU power
+WHISPER_MODEL_SIZE = "base.en"  # "tiny.en", "base.en", "small.en" - depending on CPU power
 VAD_FILTER = True # Voice activity detection to ignore silence
 CPU_THREADS = 4
 
@@ -23,10 +23,10 @@ AIRPORT_LAYOUT = {
         "02L", "20R", "02C", "20C", "02R", "20L"
     ],
     "taxiways": [
-        "Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Victor"
+        "Alpha", "Bravo", "Victor", "Whiskey", "North Cross", "South Cross"
     ],
     "platforms": [
-        "Platform 1", "Platform 2", "Cargo", "Stand F42", "Terminal 1", "Terminal 2", "Terminal 3"
+        "Terminal 1", "Terminal 2", "Terminal 3", "Terminal 4", "Cargo", "Changi East"
     ]
 }
 
