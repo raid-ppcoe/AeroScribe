@@ -1,7 +1,8 @@
 import asyncio
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import json
 import logging
 from pathlib import Path
@@ -23,13 +24,27 @@ app.add_middleware(
 class ConnectionManager:
     def __init__(self):
         self.active_connections = []
-        self.message_cache = []
+        self.state_cache = None
+        self.transcript_cache = []
+        self.alert_cache = []
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
         self.active_connections.append(websocket)
         # Flush the recent history cache to new clients so they don't see an empty screen
-        for msg in self.message_cache:
+        if self.state_cache:
+            try:
+                await websocket.send_text(self.state_cache)
+            except:
+                pass
+        
+        for msg in self.transcript_cache:
+            try:
+                await websocket.send_text(msg)
+            except:
+                pass
+                
+        for msg in self.alert_cache:
             try:
                 await websocket.send_text(msg)
             except:
@@ -43,20 +58,27 @@ class ConnectionManager:
         try:
             data = json.loads(msg)
             topic = data.get("topic")
+            
             if topic == "state":
-                import copy
-                self.message_cache = [m for m in self.message_cache if json.loads(m).get("topic") != "state"]
-                self.message_cache.append(msg)
+                self.state_cache = msg
             elif topic == "transcript":
-                self.message_cache.append(msg)
-                transcripts = [m for m in self.message_cache if json.loads(m).get("topic") == "transcript"]
-                if len(transcripts) > 15:
-                    self.message_cache.remove(transcripts[0])
+                self.transcript_cache.append(msg)
+                if len(self.transcript_cache) > 15:
+                    self.transcript_cache.pop(0)
+            elif topic == "transcript_update":
+                # Find the existing transcript with this ID and update it in cache
+                target_id = data.get("data", {}).get("id")
+                for i in range(len(self.transcript_cache)):
+                    cached_data = json.loads(self.transcript_cache[i])
+                    if cached_data.get("data", {}).get("id") == target_id:
+                        # Replace the raw broadcast with the updated one
+                        data["topic"] = "transcript" # Send it to new clients as a normal transcript
+                        self.transcript_cache[i] = json.dumps(data)
+                        break
             elif topic == "alert":
-                self.message_cache.append(msg)
-                alerts = [m for m in self.message_cache if json.loads(m).get("topic") == "alert"]
-                if len(alerts) > 10:
-                    self.message_cache.remove(alerts[0])
+                self.alert_cache.append(msg)
+                if len(self.alert_cache) > 10:
+                    self.alert_cache.pop(0)
         except Exception as e:
             logger.error(f"Cache error: {e}")
 
@@ -96,9 +118,66 @@ async def get_dashboard():
     try:
         with open(template_path, 'r', encoding='utf-8') as f:
             html = f.read()
+            # A simple hack to inject the local IP dynamically if needed, 
+            # but we're mostly relying on JS location.host for now.
         return HTMLResponse(html)
     except FileNotFoundError:
         return HTMLResponse("<h1>Dashboard Template Missing</h1>", status_code=404)
+
+@app.get("/emergency")
+async def get_emergency_dashboard():
+    template_path = Path(__file__).parent / "templates" / "emergency.html"
+    try:
+        with open(template_path, 'r', encoding='utf-8') as f:
+            html = f.read()
+        return HTMLResponse(html)
+    except FileNotFoundError:
+        return HTMLResponse("<h1>Emergency Template Missing</h1>", status_code=404)
+
+# In-memory store for actions taken on incidents (timestamp -> action)
+incident_actions = {}
+
+class EmergencyNotification(BaseModel):
+    message: str
+    entities: list[str]
+    severity: str
+    timestamp: float
+
+@app.post("/api/notify-emergency")
+async def notify_emergency(payload: EmergencyNotification):
+    # Broadcast the notification to all clients, specifically meant for emergency.html
+    broadcast_sync("emergency_notification", payload.dict())
+    return {"status": "success", "message": "Emergency broadcast sent"}
+
+@app.get("/api/incident-logs")
+async def get_incident_logs():
+    """Returns all past alerts from the logs file, enhanced with action status."""
+    alerts = []
+    log_path = config.ALERTS_LOG_PATH
+    
+    if log_path.exists():
+        try:
+            with open(log_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    if line.strip():
+                        alert = json.loads(line)
+                        ts = str(alert.get("timestamp"))
+                        alert["action_status"] = incident_actions.get(ts, "pending")
+                        alerts.append(alert)
+        except Exception as e:
+            logger.error(f"Error reading incident logs: {e}")
+            
+    # Return most recent first
+    return sorted(alerts, key=lambda x: x.get("timestamp", 0), reverse=True)
+
+class IncidentAction(BaseModel):
+    action: str # "notified" or "dismissed"
+
+@app.post("/api/incident-logs/{timestamp}/action")
+async def record_incident_action(timestamp: str, payload: IncidentAction):
+    """Records an approve/dismiss action for a specific incident."""
+    incident_actions[timestamp] = payload.action
+    return {"status": "success", "timestamp": timestamp, "action": payload.action}
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

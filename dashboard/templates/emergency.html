@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Services Dashboard</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;700&display=swap');
+
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: rgba(22, 27, 34, 0.4);
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent: #33e1ed;
+            --success: #2ea043;
+            --warning: #e3b341;
+            --danger: #f85149;
+            --danger-glow: rgba(248, 81, 73, 0.4);
+            --border: rgba(48, 54, 61, 0.5);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(circle at top right, rgba(248, 81, 73, 0.08), transparent 50%),
+                radial-gradient(circle at bottom left, rgba(227, 179, 65, 0.05), transparent 40%);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+
+        body.emergency-active {
+            animation: bg-pulse 2s infinite;
+        }
+
+        @keyframes bg-pulse {
+            0% {
+                background-color: var(--bg-color);
+            }
+
+            50% {
+                background-color: #1a0808;
+            }
+
+            100% {
+                background-color: var(--bg-color);
+            }
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Outfit', sans-serif;
+            margin-top: 0;
+        }
+
+        /* Glassmorphism Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            background: rgba(13, 17, 23, 0.6);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            border-left: 5px solid var(--danger);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: var(--glass-shadow);
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: #ff7b72;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(248, 81, 73, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1rem;
+            font-weight: 500;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: var(--success);
+            box-shadow: 0 0 10px var(--success);
+            transition: all 0.3s ease;
+        }
+
+        .content-area {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: var(--glass-shadow);
+            transition: all 0.3s ease;
+        }
+
+        .main-panel {
+            flex: 2;
+            position: relative;
+        }
+
+        .history-panel {
+            flex: 1;
+        }
+
+        .section-title {
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 1.3rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .scrollable {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding-right: 8px;
+        }
+
+        .scrollable::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollable::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .scrollable::-webkit-scrollbar-thumb {
+            background: rgba(139, 148, 158, 0.4);
+            border-radius: 6px;
+        }
+
+        .scrollable::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 148, 158, 0.7);
+        }
+
+        .empty-state {
+            color: var(--text-muted);
+            font-style: italic;
+            text-align: center;
+            padding: 40px 20px;
+            font-size: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            opacity: 0.7;
+        }
+
+        /* Emergency Alert Banner */
+        .active-emergency-view {
+            display: none;
+            flex-direction: column;
+            height: 100%;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .active-emergency-view.visible {
+            display: flex;
+        }
+
+        .emergency-banner {
+            background: linear-gradient(135deg, rgba(248, 81, 73, 0.2) 0%, rgba(248, 81, 73, 0.05) 100%);
+            border: 2px solid var(--danger);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            animation: alert-pulse 2s infinite;
+        }
+
+        @keyframes alert-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(248, 81, 73, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 15px rgba(248, 81, 73, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(248, 81, 73, 0);
+            }
+        }
+
+        .emergency-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: 8px;
+            background: var(--danger);
+        }
+
+        .emergency-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .emergency-title {
+            color: #ff7b72;
+            font-size: 2rem;
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .emergency-icon {
+            font-size: 2.5rem;
+            animation: bounce 1s infinite alternate;
+        }
+
+        @keyframes bounce {
+            from {
+                transform: translateY(0);
+            }
+
+            to {
+                transform: translateY(-10px);
+            }
+        }
+
+        .emergency-details {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        .detail-row {
+            margin-bottom: 15px;
+            display: flex;
+        }
+
+        .detail-label {
+            color: var(--text-muted);
+            width: 120px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            padding-top: 3px;
+        }
+
+        .detail-value {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .detail-value.entities {
+            color: var(--warning);
+            font-size: 1.4rem;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            margin-top: auto;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .btn-dispatch {
+            background: var(--danger);
+            color: white;
+            box-shadow: 0 4px 15px rgba(248, 81, 73, 0.4);
+        }
+
+        .btn-dispatch:hover {
+            background: #ff5a50;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(248, 81, 73, 0.6);
+        }
+
+        .btn-dispatch:active {
+            transform: translateY(1px);
+        }
+
+        .btn-standby {
+            background: transparent;
+            border: 2px solid var(--warning);
+            color: var(--warning);
+        }
+
+        .btn-standby:hover {
+            background: rgba(227, 179, 65, 0.1);
+        }
+
+        /* History Items */
+        .history-item {
+            background: rgba(13, 17, 23, 0.6);
+            padding: 16px;
+            border-radius: 10px;
+            border-left: 4px solid var(--danger);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.2s, background 0.2s;
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .history-item:hover {
+            transform: translateX(4px);
+            background: rgba(13, 17, 23, 0.8);
+        }
+
+        .history-item.selected {
+            background: rgba(51, 225, 237, 0.1);
+            border-right: 4px solid var(--accent);
+            box-shadow: inset 0 0 10px rgba(51, 225, 237, 0.1);
+        }
+
+        .history-item.resolved {
+            border-left-color: var(--success);
+            opacity: 0.7;
+        }
+
+        .history-meta {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1><span>🚨</span> Emergency Services Command</h1>
+        <div class="status-indicator">
+            <div class="dot" id="conn-dot"></div>
+            <span id="conn-status">Connecting to ATC...</span>
+        </div>
+    </div>
+
+    <div class="content-area">
+        <!-- Main Action Panel -->
+        <div class="panel main-panel">
+            <h2 class="section-title">Current Status</h2>
+
+            <div class="empty-state" id="no-emergency-state">
+                <div style="font-size: 4rem; margin-bottom: 20px; opacity: 0.5;">🛡️</div>
+                <div>All Clear. No active emergencies reported from ATC.</div>
+            </div>
+
+            <div class="active-emergency-view" id="active-emergency">
+                <div class="emergency-banner">
+                    <div class="emergency-header">
+                        <span class="emergency-icon">⚠️</span>
+                        <h2 class="emergency-title">EMERGENCY DECLARED</h2>
+                    </div>
+
+                    <div class="emergency-details">
+                        <div class="detail-row">
+                            <div class="detail-label">Time</div>
+                            <div class="detail-value" id="em-time">--:--:--</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Entities</div>
+                            <div class="detail-value entities" id="em-entities">---</div>
+                        </div>
+                        <div class="detail-row">
+                            <div class="detail-label">Details</div>
+                            <div class="detail-value" id="em-desc" style="color: #e6edf3;">Waiting for details...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn btn-standby" onclick="markResolved()">
+                        ✓ Mark Resolved
+                    </button>
+                    <button class="btn btn-dispatch" onclick="acknowledgeDispatch()">
+                        🚨 Acknowledge & Dispatch Units
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Panel -->
+        <div class="panel history-panel">
+            <h2 class="section-title">incident Log</h2>
+            <div class="scrollable" id="history-container">
+                <div class="empty-state" id="history-empty" style="padding: 20px;">
+                    No incident history for this session.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const localWsUrl = location.protocol === 'file:' ? '127.0.0.1:8080' : location.host;
+        const ws = new WebSocket(`ws://${localWsUrl}/ws`);
+
+        const connDot = document.getElementById('conn-dot');
+        const connStatus = document.getElementById('conn-status');
+        const noEmergencyState = document.getElementById('no-emergency-state');
+        const activeEmergencyView = document.getElementById('active-emergency');
+        const historyContainer = document.getElementById('history-container');
+        let historyEmpty = document.getElementById('history-empty');
+
+        let currentEmergency = null;
+        let incidentHistory = [];
+
+        function setMainStatus(incident) {
+            if (!incident) {
+                activeEmergencyView.classList.remove('visible');
+                noEmergencyState.style.display = 'flex';
+                document.body.classList.remove('emergency-active');
+                return;
+            }
+
+            noEmergencyState.style.display = 'none';
+            activeEmergencyView.classList.add('visible');
+
+            if (incident.status === 'active') {
+                document.body.classList.add('emergency-active');
+            } else {
+                document.body.classList.remove('emergency-active');
+            }
+
+            // Fill details
+            document.getElementById('em-time').innerText = incident.receivedAt.toLocaleTimeString();
+            document.getElementById('em-entities').innerText = incident.entities.join(', ') || 'UNKNOWN';
+            document.getElementById('em-desc').innerText = incident.message;
+
+            // Update buttons based on status
+            const dispatchBtn = document.querySelector('.btn-dispatch');
+            if (incident.status === 'dispatched' || incident.status === 'resolved') {
+                dispatchBtn.innerHTML = '✓ Units Dispatched';
+                dispatchBtn.style.backgroundColor = 'var(--success)';
+                dispatchBtn.disabled = true;
+            } else {
+                dispatchBtn.innerHTML = '🚨 Acknowledge & Dispatch Units';
+                dispatchBtn.style.backgroundColor = '';
+                dispatchBtn.disabled = false;
+            }
+        }
+
+        function selectIncident(id) {
+            // Remove previous selection
+            document.querySelectorAll('.history-item').forEach(el => el.classList.remove('selected'));
+
+            const selectedEl = document.getElementById(`hist-${id}`);
+            if (selectedEl) selectedEl.classList.add('selected');
+
+            currentEmergency = incidentHistory.find(inc => inc.id === id);
+            setMainStatus(currentEmergency);
+        }
+
+        ws.onopen = () => {
+            connDot.style.backgroundColor = 'var(--success)';
+            connDot.style.boxShadow = '0 0 10px var(--success)';
+            connStatus.innerText = 'Connected to ATC Main';
+        };
+
+        ws.onclose = () => {
+            connDot.style.backgroundColor = 'var(--danger)';
+            connDot.style.boxShadow = '0 0 10px var(--danger)';
+            connStatus.innerText = 'Connection Lost';
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.topic === 'emergency_notification') {
+                    handleEmergencyNotification(data.data);
+                }
+            } catch (err) {
+                console.error("Error parsing WebSocket message:", err);
+            }
+        };
+
+        function handleEmergencyNotification(payload) {
+            console.log("Emergency payload received:", payload);
+
+            // Set current emergency
+            currentEmergency = {
+                ...payload,
+                id: 'inc-' + Date.now(),
+                status: 'active',
+                receivedAt: new Date()
+            };
+
+            // Update UI
+            noEmergencyState.style.display = 'none';
+            activeEmergencyView.classList.add('visible');
+            document.body.classList.add('emergency-active');
+
+            // Fill details
+            setMainStatus(currentEmergency);
+
+            // Add to history
+            addToHistory(currentEmergency);
+
+            // Automatically select the newest one
+            selectIncident(currentEmergency.id);
+
+            // Play an alert sound (browsers usually block this without interaction so we wrap in try/catch)
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+                // Play a siren-like pattern using oscillators
+                function beep(freq, duration, time) {
+                    const osc = audioCtx.createOscillator();
+                    const gainNode = audioCtx.createGain();
+
+                    osc.connect(gainNode);
+                    gainNode.connect(audioCtx.destination);
+
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(freq, time);
+
+                    gainNode.gain.setValueAtTime(0, time);
+                    gainNode.gain.linearRampToValueAtTime(0.3, time + 0.05);
+                    gainNode.gain.setValueAtTime(0.3, time + duration - 0.05);
+                    gainNode.gain.linearRampToValueAtTime(0, time + duration);
+
+                    osc.start(time);
+                    osc.stop(time + duration);
+                }
+
+                const now = audioCtx.currentTime;
+                // High-low siren pattern
+                beep(800, 0.4, now);
+                beep(600, 0.4, now + 0.4);
+                beep(800, 0.4, now + 0.8);
+                beep(600, 0.4, now + 1.2);
+            } catch (e) {
+                console.log("Audio alert blocked or unsupported");
+            }
+        }
+
+        function addToHistory(incident) {
+            if (historyEmpty) {
+                historyEmpty.remove();
+                historyEmpty = null;
+            }
+
+            const el = document.createElement('div');
+            el.id = `hist-${incident.id}`;
+            el.className = 'history-item';
+            el.onclick = () => selectIncident(incident.id);
+
+            el.innerHTML = `
+                <div class="history-meta">
+                    <span>${incident.receivedAt.toLocaleTimeString()}</span>
+                    <span style="color: var(--danger); font-weight: bold;">ACTIVE</span>
+                </div>
+                <div style="font-weight: bold; margin-bottom: 4px; color: var(--warning);">
+                    ${incident.entities.join(', ')}
+                </div>
+                <div style="font-size: 0.85rem; opacity: 0.8; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                    ${incident.message}
+                </div>
+            `;
+
+            historyContainer.prepend(el);
+            incidentHistory.unshift(incident);
+        }
+
+        function updateHistoryStatus(id, newStatus) {
+            const inc = incidentHistory.find(i => i.id === id);
+            if (inc) inc.status = newStatus.toLowerCase();
+
+            const el = document.getElementById(`hist-${id}`);
+            if (el) {
+                if (newStatus.toLowerCase() === 'resolved') el.classList.add('resolved');
+                const statusSpan = el.querySelector('.history-meta span:nth-child(2)');
+                if (statusSpan) {
+                    statusSpan.style.color = newStatus.toLowerCase() === 'active' ? 'var(--danger)' : (newStatus.toLowerCase() === 'dispatched' ? 'var(--warning)' : 'var(--success)');
+                    statusSpan.innerText = newStatus.toUpperCase();
+                }
+            }
+        }
+
+        async function acknowledgeDispatch() {
+            if (!currentEmergency) return;
+
+            // Notify backend to reset tracking for this entity
+            const firstEntity = currentEmergency.entities[0];
+            if (firstEntity) {
+                try {
+                    await fetch(`/api/resolve-emergency/${firstEntity}`, { method: 'POST' });
+                } catch (err) {
+                    console.error("Failed to notify backend of dispatch:", err);
+                }
+            }
+
+            updateHistoryStatus(currentEmergency.id, 'Dispatched');
+            setMainStatus(currentEmergency);
+        }
+
+        async function markResolved() {
+            if (!currentEmergency) return;
+
+            // Notify backend to reset tracking for this entity
+            const firstEntity = currentEmergency.entities[0];
+            if (firstEntity) {
+                try {
+                    await fetch(`/api/resolve-emergency/${firstEntity}`, { method: 'POST' });
+                } catch (err) {
+                    console.error("Failed to notify backend of resolution:", err);
+                }
+            }
+
+            document.body.classList.remove('emergency-active');
+            updateHistoryStatus(currentEmergency.id, 'Resolved/Standby');
+            setMainStatus(null);
+        }
+
+    </script>
+</body>
+
+</html>

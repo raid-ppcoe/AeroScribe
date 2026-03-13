@@ -537,13 +537,93 @@
                 transform: translateY(0);
             }
         }
+
+        /* Incident Log Modal Specifics */
+        .incident-log-container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            height: calc(85vh - 60px);
+            overflow: hidden;
+            border-radius: 12px;
+            background: rgba(13, 17, 23, 0.4);
+            border: 1px solid var(--border);
+        }
+
+        .incident-sidebar {
+            border-right: 1px solid var(--border);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .incident-detail-panel {
+            padding: 30px;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .incident-list-item {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .incident-list-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .incident-list-item.active {
+            background: rgba(51, 225, 237, 0.1);
+            border-left: 4px solid var(--accent);
+        }
+
+        .incident-status-tag {
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 4px;
+            display: inline-block;
+        }
+
+        .status-pending {
+            background: rgba(227, 179, 65, 0.1);
+            color: var(--warning);
+            border: 1px solid rgba(227, 179, 65, 0.3);
+        }
+
+        .status-notified {
+            background: rgba(46, 160, 67, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(46, 160, 67, 0.3);
+        }
+
+        .status-dismissed {
+            background: rgba(139, 148, 158, 0.1);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
     </style>
 </head>
 
 <body>
 
     <div class="header">
-        <h1>ATC AI Assist Dashboard</h1>
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <h1>ATC AI Assist Dashboard</h1>
+            <button onclick="openIncidentLogs()" class="expand-btn"
+                style="background: rgba(51, 225, 237, 0.15); color: var(--accent); border-color: rgba(51, 225, 237, 0.4); padding: 8px 16px; border-radius: 20px;">
+                📋 Incident Logs
+            </button>
+            <a href="/emergency" target="_blank" class="expand-btn"
+                style="background: rgba(248, 81, 73, 0.15); color: #ff7b72; border-color: rgba(248, 81, 73, 0.4); padding: 8px 16px; border-radius: 20px; text-decoration: none;">
+                🚨 Emergency Dashboard
+            </a>
+        </div>
         <div class="status-indicator">
             <div class="dot" id="conn-dot"></div>
             <span id="conn-status">Connecting...</span>
@@ -551,26 +631,32 @@
     </div>
 
     <!-- Input Panel -->
-    <div class="panel input-panel">
-        <h2 class="section-title">Add Target Entity</h2>
-        <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.9rem;">
-            <div>
-                <label style="display: block; margin-bottom: 4px; color: var(--text-muted);">Callsign / ID</label>
-                <input type="text" id="mock-callsign" placeholder="e.g. SIA 318"
-                    style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); color: white; box-sizing: border-box; font-family: 'Inter', sans-serif;">
+    <div class="panel input-panel" style="display: flex; flex-direction: column;">
+        <h2 class="section-title">Priority List</h2>
+
+        <div id="priority-drop-zone"
+            style="border: 2px dashed var(--border); border-radius: 8px; padding: 20px 10px; text-align: center; color: var(--text-muted); margin-bottom: 12px; transition: all 0.2s; font-size: 0.9rem;"
+            ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="dropEntity(event)">
+            Drag & Drop Aircraft / Vehicles Here
+        </div>
+
+        <div id="priority-list-items" class="scrollable" style="flex-grow: 1; min-height: 100px; margin-bottom: 12px;">
+            <div class="empty-state" style="padding: 10px;">No priority entities added.</div>
+        </div>
+
+        <div
+            style="display: flex; flex-direction: column; gap: 8px; font-size: 0.9rem; border-top: 1px solid var(--border); padding-top: 12px; margin-top: auto;">
+            <div style="display: flex; gap: 8px;">
+                <input type="text" id="manual-priority-callsign" placeholder="Callsign/ID..."
+                    style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); color: white; box-sizing: border-box; font-family: 'Inter', sans-serif;">
+                <select id="manual-priority-type"
+                    style="padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); color: white; font-family: 'Inter', sans-serif;">
+                    <option value="aircraft">A/C</option>
+                    <option value="vehicle">GND</option>
+                </select>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <div style="flex: 1;">
-                    <label style="display: block; margin-bottom: 4px; color: var(--text-muted);">Type</label>
-                    <select id="mock-type"
-                        style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: rgba(0,0,0,0.3); color: white; font-family: 'Inter', sans-serif;">
-                        <option value="aircraft">Aircraft</option>
-                        <option value="vehicle">Ground Vehicle</option>
-                    </select>
-                </div>
-            </div>
-            <button onclick="addMockEntity()"
-                style="margin-top: 8px; padding: 10px; background: rgba(51, 225, 237, 0.15); color: var(--accent); border: 1px solid rgba(51, 225, 237, 0.4); border-radius: 6px; cursor: pointer; font-weight: 600; font-family: 'Inter', sans-serif; transition: all 0.2s;">Create
+            <button onclick="addManualPriorityEntity()"
+                style="padding: 10px; background: rgba(51, 225, 237, 0.15); color: var(--accent); border: 1px solid rgba(51, 225, 237, 0.4); border-radius: 6px; cursor: pointer; font-weight: 600; font-family: 'Inter', sans-serif; transition: all 0.2s;">Add
                 Entity</button>
         </div>
     </div>
@@ -679,12 +765,201 @@
                 style="font-size: 1.1rem; line-height: 1.5; margin-bottom: 24px; color: var(--text-main);"></p>
             <div style="display: flex; gap: 12px; justify-content: flex-end;">
                 <button id="btn-cancel-emergency" class="btn-cancel">Dismiss</button>
-                <button id="btn-approve-emergency" class="btn-approve">Notify Emergency Services</button>
+                <button id="btn-approve-emergency" class="btn-approve">Notify Emergency Users</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incident Log Modal -->
+    <div id="incidents-modal" class="modal-overlay"
+        style="display: none; justify-content: center; align-items: center;">
+        <div class="panel"
+            style="width: 90%; max-width: 1100px; height: 85vh; padding: 20px; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="section-title" style="margin: 0; border: none;">📋 Past Incident Logs</h2>
+                <button onclick="document.getElementById('incidents-modal').style.display='none'"
+                    style="background: none; border: none; color: white; cursor: pointer; font-size: 1.5rem;">&times;</button>
+            </div>
+
+            <div class="incident-log-container">
+                <div class="incident-sidebar" id="incident-list">
+                    <!-- List items will be injected here -->
+                </div>
+                <div class="incident-detail-panel" id="incident-detail">
+                    <div class="empty-state" style="margin-top: 100px;">Select an incident from the log to view details.
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        // --- INCIDENT LOG VIEWER LOGIC ---
+        let allIncidentLogs = [];
+
+        async function openIncidentLogs() {
+            document.getElementById('incidents-modal').style.display = 'flex';
+            document.getElementById('incident-list').innerHTML = '<div class="empty-state">Loading logs...</div>';
+            document.getElementById('incident-detail').innerHTML = '<div class="empty-state" style="margin-top: 100px;">Select an incident from the log to view details.</div>';
+
+            try {
+                const response = await fetch('/api/incident-logs');
+                allIncidentLogs = await response.json();
+                renderIncidentList(allIncidentLogs);
+            } catch (err) {
+                console.error("Failed to fetch incident logs:", err);
+                document.getElementById('incident-list').innerHTML = '<div class="empty-state">Error loading logs.</div>';
+            }
+        }
+
+        function renderIncidentList(logs) {
+            const listContainer = document.getElementById('incident-list');
+            listContainer.innerHTML = '';
+
+            if (logs.length === 0) {
+                listContainer.innerHTML = '<div class="empty-state">No incidents found.</div>';
+                return;
+            }
+
+            logs.forEach(incident => {
+                const item = document.createElement('div');
+                item.className = 'incident-list-item';
+                item.onclick = () => {
+                    document.querySelectorAll('.incident-list-item').forEach(el => el.classList.remove('active'));
+                    item.classList.add('active');
+                    showIncidentDetail(incident);
+                };
+
+                const date = new Date(incident.timestamp * 1000);
+                const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                let severityClass = incident.severity || 'LOW';
+                if (incident.alert_type === 'EMERGENCY_DECLARED' || (incident.message && incident.message.toLowerCase().includes('emergency'))) {
+                    severityClass = 'EMERGENCY';
+                }
+
+                const status = incident.action_status || 'pending';
+                const statusLabel = status === 'pending' ? '⏳ Pending' : (status === 'notified' ? '✓ Notified' : '✗ Dismissed');
+                const statusClass = `status-${status}`;
+
+                item.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                        <span class="badge ${severityClass}" style="font-size: 0.65rem; padding: 2px 6px;">${severityClass}</span>
+                        <span style="font-size: 0.75rem; color: var(--text-muted);">${timeStr}</span>
+                    </div>
+                    <div style="font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${incident.alert_type.replace(/_/g, ' ')}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">${incident.entities.join(', ')}</div>
+                    <div class="incident-status-tag ${statusClass}">${statusLabel}</div>
+                `;
+                listContainer.appendChild(item);
+            });
+        }
+
+        function showIncidentDetail(incident) {
+            const detailPanel = document.getElementById('incident-detail');
+            const date = new Date(incident.timestamp * 1000).toLocaleString();
+
+            let severityClass = incident.severity || 'LOW';
+            if (incident.alert_type === 'EMERGENCY_DECLARED' || (incident.message && incident.message.toLowerCase().includes('emergency'))) {
+                severityClass = 'EMERGENCY';
+            }
+
+            const status = incident.action_status || 'pending';
+            const isEmergency = severityClass === 'EMERGENCY';
+
+            let actionsHTML = '';
+            if (isEmergency && status === 'pending') {
+                actionsHTML = `
+                    <div style="margin-top: 30px; padding: 20px; background: rgba(248, 81, 73, 0.05); border: 1px dashed var(--danger); border-radius: 12px;">
+                        <h4 style="color: var(--warning); margin-top: 0;">⚠️ Action Required</h4>
+                        <p style="font-size: 0.9rem; margin-bottom: 20px;">This emergency log has not been acted upon yet. Please choose an option below:</p>
+                        <div style="display: flex; gap: 12px;">
+                            <button class="btn-cancel" style="flex: 1;" onclick="takeIncidentAction('${incident.timestamp}', 'dismissed')">Dismiss Alert</button>
+                            <button class="btn-approve" style="flex: 1;" onclick="takeIncidentAction('${incident.timestamp}', 'notified')">Notify Emergency Users</button>
+                        </div>
+                    </div>
+                `;
+            } else if (status !== 'pending') {
+                const label = status === 'notified' ? '✓ Emergency Users were Notified' : '✗ Alert was Dismissed';
+                const color = status === 'notified' ? 'var(--success)' : 'var(--text-muted)';
+                actionsHTML = `
+                    <div style="margin-top: 30px; padding: 15px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border); border-radius: 8px; color: ${color}; font-weight: 600; text-align: center;">
+                        ${label}
+                    </div>
+                `;
+            }
+
+            detailPanel.innerHTML = `
+                <div style="margin-bottom: 24px;">
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 8px;">
+                        <span class="badge ${severityClass}">${severityClass}</span>
+                        <h2 style="margin: 0;">${incident.alert_type.replace(/_/g, ' ')}</h2>
+                    </div>
+                    <div style="color: var(--text-muted); font-family: 'Outfit'; font-size: 0.95rem;">${date}</div>
+                </div>
+
+                <div style="background: rgba(255, 255, 255, 0.03); padding: 20px; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 24px;">
+                    <h4 style="margin-top: 0; color: var(--text-muted); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px;">Message Content</h4>
+                    <div style="font-size: 1.1rem; line-height: 1.6; color: var(--text-main);">${incident.message}</div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div style="background: rgba(255, 255, 255, 0.02); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                        <h4 style="margin-top: 0; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem;">Affected Entities</h4>
+                        <div style="font-weight: 500;">${incident.entities.join(', ')}</div>
+                    </div>
+                    <div style="background: rgba(255, 255, 255, 0.02); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+                        <h4 style="margin-top: 0; color: var(--text-muted); text-transform: uppercase; font-size: 0.75rem;">Timestamp (Epoch)</h4>
+                        <div style="font-family: monospace;">${incident.timestamp}</div>
+                    </div>
+                </div>
+
+                ${actionsHTML}
+            `;
+        }
+
+        async function takeIncidentAction(timestamp, action) {
+            try {
+                // Find the incident for later use
+                const incident = allIncidentLogs.find(i => String(i.timestamp) === String(timestamp));
+                if (!incident) throw new Error("Incident not found in local cache.");
+
+                // 1. Update backend
+                await fetch(`/api/incident-logs/${timestamp}/action`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: action })
+                });
+
+                // 2. If 'notified', trigger the actual emergency notification
+                if (action === 'notified') {
+                    await fetch('/api/notify-emergency', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            message: incident.message,
+                            entities: incident.entities,
+                            severity: incident.severity,
+                            timestamp: incident.timestamp
+                        })
+                    });
+
+                    // Also add to handledEmergencyEntities if the live dashboard is open
+                    if (typeof handledEmergencyEntities !== 'undefined' && incident.entities) {
+                        incident.entities.forEach(e => handledEmergencyEntities.add(e));
+                    }
+                }
+
+                // 3. Update local state and UI
+                incident.action_status = action;
+                renderIncidentList(allIncidentLogs);
+                showIncidentDetail(incident);
+            } catch (err) {
+                console.error("Failed to record incident action:", err);
+                alert("Action failed. See console for details.");
+            }
+        }
+
         function toggleExpand(btn) {
             const panel = btn.closest('.panel');
             panel.classList.toggle('expanded');
@@ -728,6 +1003,8 @@
                 if (data.topic === 'transcript') {
                     if (tsEmpty) { tsEmpty.remove(); tsEmpty = null; }
                     handleTranscript(data.data);
+                } else if (data.topic === 'transcript_update') {
+                    handleTranscriptUpdate(data.data);
                 } else if (data.topic === 'state') {
                     handleStateUpdate(data.data);
                 } else if (data.topic === 'alert') {
@@ -741,17 +1018,52 @@
 
         function handleTranscript(payload) {
             const el = document.createElement('div');
-            el.className = `transcript-item intent-${payload.parsed.intent || 'unknown'}`;
-            if (payload.parsed.emergency_flag) el.classList.add('intent-emergency');
+            el.id = `ts-${payload.id}`;
+            el.className = `transcript-item intent-unknown`;
 
-            const timeStr = new Date(payload.parsed.timestamp * 1000).toLocaleTimeString();
+            // At first, it's just raw text without parsed entity/intent data
+            const timeStr = new Date().toLocaleTimeString();
 
-            el.innerHTML = `
-                <div class="transcript-meta">${timeStr} • ${payload.parsed.entity_type.toUpperCase()} • ${payload.parsed.entity_id}</div>
-                <div class="transcript-raw">"${payload.raw}"</div>
-            `;
+            let parsed = payload.parsed;
+            if (parsed) {
+                // If it already comes with parsed data (e.g., from cache on page load)
+                if (parsed.intent) el.className = `transcript-item intent-${parsed.intent}`;
+                if (parsed.emergency_flag) el.classList.add('intent-emergency');
+
+                const eventTimeStr = parsed.timestamp ? new Date(parsed.timestamp * 1000).toLocaleTimeString() : timeStr;
+                el.innerHTML = `
+                    <div class="transcript-meta">${eventTimeStr} • ${parsed.entity_type.toUpperCase()} • ${parsed.entity_id}</div>
+                    <div class="transcript-raw">"${payload.raw}"</div>
+                `;
+            } else {
+                // Raw unparsed state (instant broadcast)
+                el.style.opacity = '0.7';
+                el.innerHTML = `
+                    <div class="transcript-meta">${timeStr} • PROCESSING... <span style="display:inline-block; animation: pulse 1s infinite;">⏳</span></div>
+                    <div class="transcript-raw">"${payload.raw}"</div>
+                `;
+            }
+
             transcriptsContainer.prepend(el);
             if (transcriptsContainer.children.length > 50) transcriptsContainer.lastChild.remove();
+        }
+
+        function handleTranscriptUpdate(payload) {
+            const el = document.getElementById(`ts-${payload.id}`);
+            if (!el) return; // If we can't find it, we skip (or we could call handleTranscript)
+
+            let parsed = payload.parsed;
+            if (!parsed) return;
+
+            el.style.opacity = '1';
+            el.className = `transcript-item intent-${parsed.intent || 'unknown'}`;
+            if (parsed.emergency_flag) el.classList.add('intent-emergency');
+
+            const eventTimeStr = parsed.timestamp ? new Date(parsed.timestamp * 1000).toLocaleTimeString() : new Date().toLocaleTimeString();
+            el.innerHTML = `
+                <div class="transcript-meta">${eventTimeStr} • ${parsed.entity_type.toUpperCase()} • ${parsed.entity_id}</div>
+                <div class="transcript-raw">"${payload.raw}"</div>
+            `;
         }
 
         function getPhaseStyle(phase) {
@@ -781,6 +1093,9 @@
                 if (ac.route.length > 0) rwRoute += ` (${ac.route.join(', ')})`;
 
                 const tr = document.createElement('tr');
+                tr.draggable = true;
+                tr.ondragstart = (e) => startDrag(e, ac.callsign, 'aircraft');
+                tr.style.cursor = 'grab';
                 tr.innerHTML = `
                     <td><strong>${ac.callsign}</strong></td>
                     <td><span style="${getPhaseStyle(ac.phase)}">${ac.phase.toUpperCase()}</span></td>
@@ -799,6 +1114,9 @@
                 if (v.emergency_flag) clearanceClass += ' emergency';
 
                 const tr = document.createElement('tr');
+                tr.draggable = true;
+                tr.ondragstart = (e) => startDrag(e, v.vehicle_id, 'vehicle');
+                tr.style.cursor = 'grab';
                 tr.innerHTML = `
                     <td><strong>${v.vehicle_id}</strong></td>
                     <td>${v.position}</td>
@@ -812,8 +1130,14 @@
         let alertIdCounter = 0;
         let emergencyQueue = [];
         let isPopupShowing = false;
+        let handledEmergencyEntities = new Set();
+        let pendingEmergencyEntities = new Set(); // Track entities that have a popup queued or visible
 
         function showEmergencyPopup(payload, alertId) {
+            // Mark all entities in this alert as pending
+            if (payload.entities) {
+                payload.entities.forEach(e => pendingEmergencyEntities.add(e));
+            }
             emergencyQueue.push({ payload, alertId });
             processEmergencyQueue();
         }
@@ -827,16 +1151,22 @@
             const modal = document.getElementById('emergency-modal');
             const desc = document.getElementById('em-modal-desc');
 
-            desc.innerHTML = `<strong>Aircraft/Entities:</strong> ${payload.entities.join(', ')}<br><br><strong>Description:</strong> ${payload.message}<br><br>Should emergency services be notified?`;
+            desc.innerHTML = `<strong>Aircraft/Entities:</strong> ${payload.entities.join(', ')}<br><br><strong>Description:</strong> ${payload.message}<br><br><span style="color: var(--warning); font-weight: bold;">Would you like to notify emergency users (Fire, Medical, Towing)?</span>`;
 
-            document.getElementById('btn-approve-emergency').onclick = () => approveEmergencyServices(alertId);
-            document.getElementById('btn-cancel-emergency').onclick = () => closeEmergencyPopup(alertId);
+            document.getElementById('btn-approve-emergency').onclick = () => approveEmergencyServices(alertId, payload);
+            document.getElementById('btn-cancel-emergency').onclick = () => closeEmergencyPopup(alertId, payload);
 
             modal.style.display = 'flex';
         }
 
-        function closeEmergencyPopup(alertId) {
+        function closeEmergencyPopup(alertId, payload) {
             document.getElementById('emergency-modal').style.display = 'none';
+            if (payload && payload.entities) {
+                payload.entities.forEach(e => {
+                    handledEmergencyEntities.add(e);
+                    pendingEmergencyEntities.delete(e);
+                });
+            }
             const statusEl = document.getElementById(`status-${alertId}`);
             if (statusEl) {
                 statusEl.innerText = "Emergency Response Declined";
@@ -846,13 +1176,34 @@
             processEmergencyQueue();
         }
 
-        function approveEmergencyServices(alertId) {
+        function approveEmergencyServices(alertId, payload) {
             document.getElementById('emergency-modal').style.display = 'none';
+            if (payload && payload.entities) {
+                payload.entities.forEach(e => {
+                    handledEmergencyEntities.add(e);
+                    pendingEmergencyEntities.delete(e);
+                });
+            }
             const statusEl = document.getElementById(`status-${alertId}`);
             if (statusEl) {
-                statusEl.innerHTML = "✓ Emergency Response Notified";
+                statusEl.innerHTML = "✓ Emergency Users Notified";
                 statusEl.style.color = "var(--success)";
             }
+
+            // Send payload to backend
+            fetch('/api/notify-emergency', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: payload.message,
+                    entities: payload.entities,
+                    severity: payload.severity,
+                    timestamp: payload.timestamp
+                })
+            }).catch(err => console.error("Error notifying emergency services:", err));
+
             isPopupShowing = false;
             processEmergencyQueue();
         }
@@ -872,8 +1223,21 @@
 
             let statusHTML = '';
             if (severityClass === 'EMERGENCY') {
-                statusHTML = `<div id="status-${alertId}" style="margin-top: 8px; font-weight: bold; color: var(--warning); font-size: 0.85rem;">Pending Emergency Response...</div>`;
-                showEmergencyPopup(payload, alertId);
+                // Check if ALL entities in this alert have already been handled OR are pending
+                const allHandled = payload.entities && payload.entities.length > 0 &&
+                    payload.entities.every(e => handledEmergencyEntities.has(e));
+
+                const anyPending = payload.entities && payload.entities.length > 0 &&
+                    payload.entities.some(e => pendingEmergencyEntities.has(e));
+
+                if (allHandled) {
+                    statusHTML = `<div id="status-${alertId}" style="margin-top: 8px; font-weight: bold; color: var(--text-muted); font-size: 0.85rem;">Previously Handled</div>`;
+                } else if (anyPending) {
+                    statusHTML = `<div id="status-${alertId}" style="margin-top: 8px; font-weight: bold; color: var(--warning); font-size: 0.85rem;">Alert Queued</div>`;
+                } else {
+                    statusHTML = `<div id="status-${alertId}" style="margin-top: 8px; font-weight: bold; color: var(--warning); font-size: 0.85rem;">Pending Emergency Response...</div>`;
+                    showEmergencyPopup(payload, alertId);
+                }
             }
 
             el.innerHTML = `
@@ -1056,16 +1420,24 @@
 
                 if (!visible) continue;
 
-                const pinColor = e.emergency ? '#f85149' : (e.type === 'aircraft' ? stringToColor(e.callsign) : '#e3b341');
+                // VIP check 
+                const isVip = typeof priorityList !== 'undefined' && priorityList.some(p => p.id.toLowerCase() === e.callsign.toLowerCase() && p.isVip);
+
+                const pinColor = e.emergency ? '#f85149' : (isVip ? '#e3b341' : (e.type === 'aircraft' ? stringToColor(e.callsign) : '#8b949e'));
                 if (e.emergency) {
                     ctx.beginPath(); ctx.arc(e.x, e.y, 15 + Math.sin(Date.now() / 150) * 5, 0, Math.PI * 2);
                     ctx.fillStyle = 'rgba(248, 81, 73, 0.3)'; ctx.fill();
+                } else if (isVip) {
+                    ctx.beginPath(); ctx.arc(e.x, e.y, 12 + Math.sin(Date.now() / 200) * 3, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(227, 179, 65, 0.3)'; ctx.fill();
                 }
+
                 ctx.beginPath(); ctx.arc(e.x, e.y, e.type === 'aircraft' ? 8 : 6, 0, Math.PI * 2);
                 ctx.fillStyle = pinColor; ctx.fill();
-                ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+                ctx.strokeStyle = isVip ? '#e3b341' : '#fff'; ctx.lineWidth = isVip ? 2 : 1; ctx.stroke();
 
-                labelsToDraw.push({ text: e.callsign, x: e.x + 12, y: e.y + 4 });
+                let labelText = isVip ? '⭐ ' + e.callsign : e.callsign;
+                labelsToDraw.push({ text: labelText, x: e.x + 12, y: e.y + 4, isVip: isVip });
             }
 
             // Simple vertical collision avoidance for labels
@@ -1086,40 +1458,195 @@
                 ctx.font = 'bold 12px Inter';
                 // Draw a subtle background for better readability against the map
                 const textWidth = ctx.measureText(lbl.text).width;
-                ctx.fillStyle = 'rgba(11, 15, 25, 0.7)';
+                ctx.fillStyle = lbl.isVip ? 'rgba(22, 18, 9, 0.8)' : 'rgba(11, 15, 25, 0.7)';
                 ctx.fillRect(lbl.x - 2, lbl.y - 10, textWidth + 4, 14);
 
-                ctx.fillStyle = '#fff';
+                ctx.fillStyle = lbl.isVip ? '#e3b341' : '#fff';
                 ctx.fillText(lbl.text, lbl.x, lbl.y);
             }
             ctx.restore();
             requestAnimationFrame(drawMap);
         }
         requestAnimationFrame(drawMap);
-        function addMockEntity() {
-            const callsign = document.getElementById('mock-callsign').value.trim();
-            const type = document.getElementById('mock-type').value;
-            if (!callsign) return;
+        // --- PRIORITY LIST LOGIC ---
+        let priorityList = []; // Array of objects { id, type, isVip }
 
-            const id = callsign.toLowerCase().replace(/\s+/g, '_');
-            if (type === 'aircraft') {
-                if (!mapEntities[id]) {
-                    mapEntities[id] = { x: 500, y: 950, type: 'aircraft', callsign: callsign, targetX: 500, targetY: 950, emergency: false, locStr: 'unknown', isMock: true };
+        function startDrag(ev, id, type) {
+            ev.dataTransfer.setData("text/plain", JSON.stringify({ id, type }));
+            ev.currentTarget.style.opacity = '0.5';
+        }
+
+        document.addEventListener('dragend', (ev) => {
+            if (ev.target.tagName === 'TR') ev.target.style.opacity = '1';
+        });
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+            const dropZone = document.getElementById('priority-drop-zone');
+            dropZone.style.borderColor = 'var(--accent)';
+            dropZone.style.background = 'rgba(51, 225, 237, 0.1)';
+        }
+
+        function dragLeave(ev) {
+            ev.preventDefault();
+            const dropZone = document.getElementById('priority-drop-zone');
+            dropZone.style.borderColor = 'var(--border)';
+            dropZone.style.background = 'transparent';
+        }
+
+        function dropEntity(ev) {
+            ev.preventDefault();
+            dragLeave(ev);
+            try {
+                const data = JSON.parse(ev.dataTransfer.getData("text/plain"));
+                if (data && data.isPriorityListItem) {
+                    // Reorder item
+                    const fromIndex = data.index;
+                    const dropTarget = ev.target.closest('.priority-item');
+                    let toIndex = priorityList.length; // Default to end
+
+                    if (dropTarget) {
+                        toIndex = parseInt(dropTarget.dataset.index);
+                    } else {
+                        // If dropped on the container but not a specific item, 
+                        // attempt to determine position based on mouse coordinates if possible,
+                        // or just append to end (which is default).
+                    }
+
+                    if (fromIndex !== toIndex) {
+                        const [movedItem] = priorityList.splice(fromIndex, 1);
+                        // If moving down, adjusting the index because we removed an item before it
+                        if (toIndex > fromIndex) toIndex--;
+                        priorityList.splice(toIndex, 0, movedItem);
+                        renderPriorityList();
+                    }
+
+                } else if (data && data.id) {
+                    // Add new item
+                    addPriorityEntity(data.id, data.type);
                 }
-            } else {
-                if (!mapEntities[id]) {
-                    mapEntities[id] = { x: 500, y: 950, type: 'vehicle', callsign: callsign, targetX: 500, targetY: 950, emergency: false, locStr: 'unknown', isMock: true };
-                }
+            } catch (e) {
+                console.error("Invalid drop data");
             }
-            document.getElementById('mock-callsign').value = '';
+        }
 
-            // Add a mock alert to notify
+        function addManualPriorityEntity() {
+            const idInput = document.getElementById('manual-priority-callsign');
+            const typeInput = document.getElementById('manual-priority-type');
+            const id = idInput.value.trim();
+            if (id) {
+                addPriorityEntity(id, typeInput.value);
+                idInput.value = '';
+            }
+        }
+
+        function addPriorityEntity(id, type) {
+            if (priorityList.some(e => e.id.toLowerCase() === id.toLowerCase())) return;
+            priorityList.push({ id, type, isVip: false });
+
+            // Show mock alert that it was added
             handleAlert({
                 severity: "INFO",
-                alert_type: "Manual Entry",
-                entities: [callsign],
-                message: `Manually added ${type} target: ${callsign} `,
+                alert_type: "Priority Added",
+                entities: [id],
+                message: `Added ${type} target to Priority List: ${id}`,
                 timestamp: Date.now() / 1000
+            });
+
+            renderPriorityList();
+        }
+
+        function removePriorityEntity(id) {
+            priorityList = priorityList.filter(e => e.id.toLowerCase() !== id.toLowerCase());
+            renderPriorityList();
+        }
+
+        function toggleVip(id) {
+            const entity = priorityList.find(e => e.id.toLowerCase() === id.toLowerCase());
+            if (entity) {
+                entity.isVip = !entity.isVip;
+                renderPriorityList();
+            }
+        }
+
+        function renderPriorityList() {
+            const container = document.getElementById('priority-list-items');
+            container.innerHTML = '';
+
+            if (priorityList.length === 0) {
+                container.innerHTML = '<div class="empty-state" style="padding: 10px;">No priority entities added.</div>';
+                return;
+            }
+
+            priorityList.forEach((entity, index) => {
+                const item = document.createElement('div');
+                item.className = 'priority-item';
+                item.dataset.index = index;
+                item.draggable = true;
+                item.style.cssText = `
+                    display: flex; align-items: center; justify-content: space-between;
+                    background: rgba(13, 17, 23, 0.6); padding: 10px 12px; border-radius: 8px;
+                    border: 1px solid var(--border); margin-bottom: 6px; animation: slideIn 0.2s ease;
+                    cursor: grab;
+                `;
+
+                // Add drag events for reordering
+                item.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', JSON.stringify({ isPriorityListItem: true, index: index, id: entity.id }));
+                    e.currentTarget.style.opacity = '0.5';
+                    e.currentTarget.classList.add('dragging');
+                });
+
+                item.addEventListener('dragend', (e) => {
+                    e.currentTarget.style.opacity = '1';
+                    e.currentTarget.classList.remove('dragging');
+                    document.querySelectorAll('.priority-item').forEach(i => i.style.borderTop = '1px solid var(--border)');
+                });
+
+                item.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    // We only want to highlight if dragging another priority item
+                    try {
+                        const dragData = JSON.parse(e.dataTransfer.getData('text/plain') || '{}');
+                        e.currentTarget.style.borderTop = '2px solid var(--accent)';
+                    } catch (err) { }
+                });
+
+                item.addEventListener('dragleave', (e) => {
+                    e.currentTarget.style.borderTop = '1px solid var(--border)';
+                });
+
+                // Allow drop directly on the list items
+                item.addEventListener('drop', (e) => {
+                    // Prevent propagation so the outer dropZone doesn't necessarily fire if we handle it here
+                    e.stopPropagation();
+                    e.currentTarget.style.borderTop = '1px solid var(--border)';
+                    dropEntity(e);
+                });
+
+
+                const rankSrc = `<span style="display:inline-block; width: 20px; height: 20px; line-height:20px; text-align:center; background: rgba(255,255,255,0.1); border-radius:4px; margin-right: 8px; font-size: 0.75rem; font-weight: bold;">${index + 1}</span>`;
+                const typeIcon = entity.type === 'aircraft' ? '✈️' : '🚜';
+
+                let vipBtnStyle = `background: ${entity.isVip ? 'rgba(227, 179, 65, 0.2)' : 'transparent'}; 
+                                   border: 1px solid ${entity.isVip ? 'var(--warning)' : 'var(--border)'};
+                                   color: ${entity.isVip ? 'var(--warning)' : 'var(--text-muted)'};
+                                   border-radius: 4px; padding: 4px 8px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; font-weight: 600;`;
+
+                item.innerHTML = `
+                    <div style="display: flex; align-items: center; flex: 1; overflow: hidden; pointer-events: none;">
+                        ${rankSrc}
+                        <span style="font-size: 0.8rem; margin-right: 6px;">${typeIcon}</span>
+                        <strong style="font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${entity.id}</strong>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button onclick="toggleVip('${entity.id}')" style="${vipBtnStyle}" title="Toggle VIP Status">
+                            ${entity.isVip ? '⭐ VIP' : 'Set VIP'}
+                        </button>
+                        <button onclick="removePriorityEntity('${entity.id}')" style="background:transparent; border:none; color:var(--text-muted); cursor:pointer; font-size: 1.2rem; line-height: 1; margin-left: 2px" onmouseover="this.style.color='var(--danger)'" onmouseout="this.style.color='var(--text-muted)'">&times;</button>
+                    </div>
+                `;
+                container.appendChild(item);
             });
         }
 

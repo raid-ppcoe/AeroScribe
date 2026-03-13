@@ -1,9 +1,9 @@
 # AeroScribe: Comprehensive System Documentation
 
 ## 1. Project Overview
-AeroScribe (formerly ATC AI Assist System) is a real-time, offline, and CPU-compatible decision-support layer for Air Traffic Control. This system converts radio speech into structured ATC events, maintains an active operational state of aircraft and ground vehicles, and automatically detects conflicts (e.g., runway incursions) and emergency escalations.
+AeroScribe (formerly ATC AI Assist System) is a real-time, multi-agent decision-support layer for Air Traffic Control. The system converts radio speech into structured ATC events via a **4-agent orchestration pipeline** powered by **Microsoft Azure AI Foundry**, maintains an active operational state of aircraft and ground vehicles, and automatically detects conflicts (e.g., runway incursions) and emergency escalations. It includes **Azure AI Content Safety** for Responsible AI governance and exposes its capabilities via a **Model Context Protocol (MCP) server**.
 
-It is designed to be highly resilient, running completely locally without reliance on paid cloud APIs or GPUs.
+It is designed to be highly resilient, capable of running locally or deployed on **Azure App Service** for cloud-based operation.
 
 ---
 
@@ -15,10 +15,12 @@ This module handles the ingestion and transcription of audio.
 - **`stt_engine.py`**: Employs `faster-whisper` for fast, CPU-only local transcription of audio chunks sent by the listener.
 - **`atc_parser.py`**: Provides initial regex and keyword-based parsing logic as a fallback or heuristic extractor for specific entities, though the heavy lifting is handled by the LLM.
 
-### 2.2 LLM Processing Agent (`agent/`)
-- **`llm_processor.py`**: Utilizes a highly efficient, CPU-friendly Hugging Face model (`Qwen/Qwen2.5-0.5B-Instruct`) to interpret transcripts.
-  - Takes the raw STT text and output JSON mapping the entity state (e.g., aircraft ID, destination runway, intent).
-  - Handles the complex logic of mapping fuzzy, phonetically inaccurate transcription text to strict operational schemas based on the current airport layout state.
+### 2.2 Multi-Agent Orchestrator (`agent/`)
+- **`llm_processor.py`**: Houses the `AeroScribeOrchestrator`, which coordinates a **4-agent pipeline** powered by **Azure AI Foundry (GPT-4.1)**:
+  1. **ContentSafetyAgent (Step 0)**: Screens raw transcripts using the **Azure AI Content Safety** SDK to filter harmful or inappropriate content before any processing occurs. This ensures **Responsible AI** governance.
+  2. **TranscriptionAgent (Step 1)**: Specialized in mapping phonetically noisy STT output to structured aviation JSON. Uses contextual phonetic inference to correctly interpret misspellings (e.g., "maybe" → "MAYDAY").
+  3. **SafetyAgent (Step 2)**: Re-evaluates the structured event against the current airport digital twin state to detect high-stakes violations such as unauthorized runway incursions or conflicting clearances.
+  4. **StrategicPlanningAgent (Step 3, on-demand)**: Generates conflict-free routing suggestions for all active entities on request.
 
 ### 2.3 Operational State Management (`state/`)
 This module acts as the source of truth for all entities on the airfield.
@@ -43,14 +45,23 @@ This module acts as the source of truth for all entities on the airfield.
   - **Normal Mode**: Standard arrival and departure flows.
   - **Emergency Mode**: Tests extreme edge cases, simulating a rejected takeoff, engine fire, MAYDAY calls, and the dispatch of emergency response vehicles.
 
+### 2.7 MCP Server (`mcp_server.py`)
+- **`mcp_server.py`**: A **Model Context Protocol (MCP)** server built with **FastMCP** that exposes AeroScribe's capabilities as discoverable tools for external agents (e.g., VS Code Copilot, other MCP clients).
+  - `get_airport_layout`: Returns the static airport configuration.
+  - `get_airport_state`: Returns the latest aircraft and ground vehicle state from the event log.
+  - `get_live_alerts`: Returns the most recent alerts.
+
 ---
 
 ## 3. Technology Stack
 - **Backend Framework**: FastAPI (Uvicorn, WebSockets)
+- **AI Orchestration**: Azure AI Foundry (GPT-4.1) via `openai` SDK — Multi-Agent Pipeline
+- **Responsible AI**: Azure AI Content Safety (`azure-ai-contentsafety`)
+- **Agent Interoperability**: Model Context Protocol (MCP) via `FastMCP`
 - **Audio Capturing**: `sounddevice`
 - **Transcription**: `faster-whisper`
-- **Natural Language Understanding**: `transformers` (`Qwen/Qwen2.5-0.5B-Instruct` via pipeline)
 - **Frontend**: Vanilla HTML5, CSS3, JavaScript (WebSocket Client)
+- **Cloud Hosting**: Azure App Service
 - **Testing**: `pytest`
 
 ---

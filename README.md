@@ -1,36 +1,45 @@
-# ATC AI Assist System ✈️
+# AeroScribe ✈️
 
-A real-time, offline, and CPU-only decision-support layer for Air Traffic Control. This system converts radio speech into structured ATC events, maintains an active operational state of aircraft and ground vehicles, and automatically detects conflicts (e.g., runway incursions) and emergency escalations.
+A real-time, **multi-agent** decision-support layer for Air Traffic Control powered by **Microsoft Azure AI Foundry**. This system converts radio speech into structured ATC events via a 4-agent orchestration pipeline, maintains an active operational state of aircraft and ground vehicles, and automatically detects conflicts and emergency escalations. It integrates **Azure AI Content Safety** for Responsible AI governance and exposes its capabilities via a **Model Context Protocol (MCP) server**.
 
 ![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
 ![License](https://img.shields.io/badge/License-MIT-green.svg)
+![Azure](https://img.shields.io/badge/Azure-AI%20Foundry-0078D4.svg)
+![MCP](https://img.shields.io/badge/MCP-Server-blueviolet.svg)
 
 ## Features
-- **Audio Intelligence (STT & NLP):** Uses `faster-whisper` for fast, CPU-only local transcription. Uses rule-based regex and keyword parsing to extract entity IDs, intents, runways, routes, and clearances.
+- **Multi-Agent Orchestration:** 4-agent pipeline powered by Azure AI Foundry (GPT-4.1):
+  - **ContentSafetyAgent**: Screens transcripts via Azure AI Content Safety (Responsible AI)
+  - **TranscriptionAgent**: Phonetically-resilient STT-to-aviation-JSON mapping
+  - **SafetyAgent**: Audits events against the airport digital twin for conflict detection
+  - **StrategicPlanningAgent**: On-demand conflict-free routing suggestions
+- **MCP Server:** Model Context Protocol server exposing airport state, layout, and alerts as discoverable tools for external agents (e.g., VS Code Copilot).
+- **Audio Intelligence (STT & NLP):** Uses `faster-whisper` for fast, CPU-only local transcription.
 - **State Management Engine:** In-memory object tracking of Aircraft and Ground vehicles.
 - **Event-Sourced Logging:** All transcripts, parsed events, state snapshots, and alerts are appended to JSONL files for easy history replay.
-- **Real-time Conflict Detection:** Deterministic rules alert on:
-  - Unauthorized runway incursions
-  - Multiple entities cleared on the same runway
-  - Taxiway segment overlaps
-  - Unapproved movements (clearance violations)
+- **Real-time Conflict Detection:** Deterministic rules alert on unauthorized runway incursions, taxiway overlaps, and clearance violations.
 - **Emergency Escalation:** Detects keywords like "mayday", "fire", and "engine failure" and immediately alerts the dashboard.
 - **WebSockets Dashboard:** A glassmorphic, dynamic, and responsive UI built with FastAPI, WebSockets, and vanilla HTML/JS/CSS.
 - **Simulation Engine:** Scripted radio simulator to dry-run logic and test the dashboard without speaking into a microphone.
+- **Azure Deployment:** One-command deployment to Azure App Service via `deploy_azure.sh`.
 
 ---
 
 ##  System Architecture
 
 ```text
-atc_ai_assist/
+aerscribe/
 ├── main.py                          # Entry point (Server, STT Listener, Simulator)
-├── config.py                        # Airport layout and system settings
+├── config.py                        # Airport layout, Azure Foundry & Content Safety settings
+├── mcp_server.py                    # MCP Server (Model Context Protocol)
 ├── requirements.txt                 # Python dependencies
+├── deploy_azure.sh                  # Azure App Service deployment script
 ├── audio/
 │   ├── speech_listener.py           # Chunking mic/wav input
 │   ├── stt_engine.py                # Local Faster-Whisper execution
 │   └── atc_parser.py                # NLP regex intent extraction
+├── agent/
+│   └── llm_processor.py             # Multi-Agent Orchestrator (4-agent pipeline)
 ├── state/
 │   ├── event_store.py               # JSONL logging utility
 │   ├── aircraft_state.py            # Tracks airborne/taxiing aircraft
@@ -41,7 +50,8 @@ atc_ai_assist/
 ├── dashboard/
 │   ├── server.py                    # FastAPI & WebSocket manager
 │   └── templates/
-│       └── dashboard.html           # Live operational UI
+│       ├── dashboard.html           # Live operational UI
+│       └── emergency.html           # Emergency services interface
 ├── simulation/
 │   └── radio_simulator.py           # Scripted mock-ATC scenario
 ├── logs/                            # Automatically generated events.jsonl & alerts.jsonl

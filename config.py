@@ -36,6 +36,19 @@ CONFLICT_SEVERITY_MEDIUM = "MEDIUM"
 
 # Server configuration
 HOST = "0.0.0.0"
-PORT = 8080
+PORT = int(os.environ.get("PORT", 8080))
 
+# Azure Foundry Configuration
+AZURE_FOUNDRY_API_KEY = os.environ.get("AZURE_FOUNDRY_API_KEY", "")
+AZURE_FOUNDRY_ENDPOINT = "https://aeroscribe-hackathon-reactor.cognitiveservices.azure.com/"
+AZURE_FOUNDRY_MODEL = "gpt-4.1"
 
+# Azure AI Content Safety Configuration (Responsible AI Governance)
+AZURE_CONTENT_SAFETY_ENDPOINT = os.environ.get(
+    "AZURE_CONTENT_SAFETY_ENDPOINT",
+    "https://aeroscribe-hackathon-reactor.cognitiveservices.azure.com/"
+)
+AZURE_CONTENT_SAFETY_KEY = os.environ.get(
+    "AZURE_CONTENT_SAFETY_KEY",
+    AZURE_FOUNDRY_API_KEY  # Reuse the same key if co-located on the same Cognitive Services resource
+)

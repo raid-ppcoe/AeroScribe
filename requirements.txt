@@ -13,3 +13,6 @@ pytest
 # LLM
 google-genai
 pydantic
+openai
+azure-ai-contentsafety
+azure-identity
